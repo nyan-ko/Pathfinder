@@ -7,8 +7,8 @@
     <ProjectGuid>{2B1E1FA5-63BD-46C3-9F60-398461C17650}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Client</RootNamespace>
-    <AssemblyName>Client</AssemblyName>
+    <RootNamespace>Pathfinder</RootNamespace>
+    <AssemblyName>Pathfinder</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -31,8 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="OTAPI">
-      <HintPath>..\..\..\..\Desktop\terraria backup\1.4\1.4.0.5\tshock stuff\TShock4.4.0_Pre11_Terraria1.4.0.5\OTAPI.dll</HintPath>
+    <Reference Include="OTAPI, Version=1.4.0.5, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\ImageToTile\ImageToTile\librarie\OTAPI.dll</HintPath>
     </Reference>
     <Reference Include="ReLogic">
       <HintPath>..\..\terraria 1.4.5.05.5.50.5.05.0.5\Libraries\ReLogic\ReLogic.dll</HintPath>
@@ -49,8 +50,9 @@
   <ItemGroup>
     <Compile Include="BinaryHeap.cs" />
     <Compile Include="Interfaces.cs" />
+    <Compile Include="Moves\Ascend.cs" />
     <Compile Include="Moves\BaseMovement.cs" />
-    <Compile Include="Moves\WalkingMovement.cs" />
+    <Compile Include="Moves\Walk.cs" />
     <Compile Include="Nodes.cs" />
     <Compile Include="PlayerProjection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
