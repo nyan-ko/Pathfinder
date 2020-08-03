@@ -23,8 +23,34 @@ namespace Pathfinder {
         public float runSlowdown;
         public float jumpSpeed;
         public int jump;
+        public bool jumping;
 
-        public bool ValidPosition(Vector2 tilePosition, ref bool inAir) {
+        public float maxFallSpeed;
+        public float gravity;
+
+        private byte _lastDirection;
+        public HorizontalDirection direction;
+
+        public PlayerProjection(Player player) {
+            position = player.position;
+            velocity = player.velocity;
+            width = player.width;
+            height = player.height;
+
+            maxRunSpeed = player.maxRunSpeed;
+            runAcceleration = player.runAcceleration;
+            runSlowdown = player.runSlowdown;
+            jumpSpeed = Player.jumpSpeed;
+            jump = player.jump;
+            jumping = false;
+
+            maxFallSpeed = player.maxFallSpeed;
+            gravity = player.gravity;
+            _lastDirection = 1;
+            direction = HorizontalDirection.None;
+        }
+
+        public bool ValidPosition(Vector2 tilePosition, bool canBeInAir) {
             if (tilePosition.X > Main.maxTilesX || tilePosition.Y > Main.maxTilesY) {
                 throw new InvalidOperationException("Position passed was likely in pixels instead of tiles.");
             }
@@ -32,7 +58,6 @@ namespace Pathfinder {
             const int MIDDLE_TILE = 0;
             const int SIDE_TILE = 1;
 
-            bool canBeInAir = inAir;
             BitsByte onGround = (byte)(canBeInAir ? 2 : 0);
 
             int x = (int)tilePosition.X;
@@ -75,8 +100,31 @@ namespace Pathfinder {
                 }
             }
 
-            inAir = !onGround[MIDDLE_TILE] && !onGround[SIDE_TILE]; 
+            //inAir = !onGround[MIDDLE_TILE] && !onGround[SIDE_TILE];  // used to be ref
             return middleFree && sideFree && (canBeInAir || (onGround[MIDDLE_TILE] && onGround[SIDE_TILE]));
+        }
+
+        public void UpdateTurnAround() {
+            if (velocity.X < maxRunSpeed) {
+                if (velocity.X < runSlowdown) {
+                    velocity.X += runSlowdown;
+                }
+                velocity.X += runAcceleration;
+            }
+            position += velocity;
+        }
+
+        public void UpdateHorizontalMovement() {
+            if (velocity.X < maxRunSpeed) {
+                velocity.X += runAcceleration;
+            }
+            position += velocity;
+        }
+
+        public void AdjustRunFieldsForTurningAround(HorizontalDirection direction) {
+            int multiplier = (int)direction * _lastDirection;
+            velocity.X *= multiplier;
+            runSlowdown *= multiplier;
         }
 
         public Vector2 Center {

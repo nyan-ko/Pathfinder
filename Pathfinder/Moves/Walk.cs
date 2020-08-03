@@ -11,61 +11,39 @@ using Nodes;
 namespace Pathfinder.Moves {
     public class Walk : BaseMovement {
         private int deltaX;
-        private HorizontalDirection direction;
 
-        public override int dX => deltaX;
-
-        public override int dY => 0;
-
-        public Walk(int dX, HorizontalDirection relativeDirection) {
-            deltaX = dX;
-            direction = relativeDirection;
-
+        public override int dX {
+            get => deltaX;
+            set => deltaX = value;
         }
 
-        protected override float CalculateCost(ref PlayerProjection player, AbstractPathNode currentNode) {
-            int     frames                  = 0;
-            bool    headingLeft             = direction == HorizontalDirection.Left;
-            int     multiplier              = headingLeft ? -1 : 1;  // allows movement calculations to work in both directions
-            float   projectedPosition       = headingLeft ? player.TopLeft.X : player.TopRight.X;
-            int     goalLocation            = (int)(projectedPosition + dX * 16);
-            float   projectedVelocity       = player.velocity.X;
+        public override int dY {
+            get => 0;
+            set { }
+        }
 
-            float   maxRunSpeed             = player.maxRunSpeed * multiplier;
-            float   runAcceleration         = player.runAcceleration * multiplier;
+        public override bool Jump => false;
 
-            bool    standingStill           = projectedVelocity == 0;
-            bool    playerGoingWrongWay     = !standingStill && (projectedVelocity < 0 && direction == HorizontalDirection.Right ||
-                projectedVelocity > 0 && direction == HorizontalDirection.Left);
+        public Walk(int dX) {
+            deltaX = dX;
+        }
 
-            bool inAir = false;  // unused
-            if (!player.ValidPosition(new Vector2(goalLocation / 16, player.position.Y / 16), ref inAir))
-                return float.MaxValue;
-
-            if (playerGoingWrongWay) {  // calculate the number of frames necessary for player to turn around and reset velocity
-
-                projectedVelocity *= multiplier;
-                float   runTurnSpeed        = player.runSlowdown * multiplier;
-
-                while (projectedVelocity < 0) {
-                    if (projectedVelocity < runTurnSpeed) {
-                        projectedVelocity += runTurnSpeed;
-                    }
-                    projectedVelocity += runAcceleration;
-                    projectedPosition += projectedVelocity;
-                    frames++;
-                }
-            }
-
-            while (Math.Abs(projectedPosition - goalLocation) > ACCEPTABLE_RANGE) {
-                if (projectedVelocity < maxRunSpeed) {
-                    projectedVelocity += runAcceleration;
-                }
-                projectedPosition += projectedVelocity;
+        protected override void UpdateTurnAround(ref PlayerProjection player, out int frames) {
+            frames = 0;
+            player.AdjustRunFieldsForTurningAround(player.direction);
+            while (player.velocity.X < 0) {
+                player.UpdateTurnAround();
                 frames++;
             }
+        }
 
-            return frames;  // return value will likely be changed in the future to more accurately reflect the cost of this movement
+        protected override void UpdateMovementTowardsGoal(ref PlayerProjection player, Vector2 goal, out int frames) {
+            frames = 0;
+            int goalLocation = (int)goal.X;
+            while (Math.Abs(player.position.X - goalLocation) > ACCEPTABLE_RANGE) {
+                player.UpdateHorizontalMovement();
+                frames++;
+            }
         }
     }
 }

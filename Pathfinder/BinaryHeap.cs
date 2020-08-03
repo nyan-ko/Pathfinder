@@ -70,9 +70,12 @@ namespace Pathfinder {
             }
             while ((childIndex <<= 1) <= Size);
 
+            result.Status = NodeStatus.Closed;
             return result;
         }
-        
+
+        public void Update(T node) => MaintainHeapStructure(node);
+
         private void UpdateNode(T node, int newIndex) {
             nodes[newIndex] = node;
             node.HeapIndex = newIndex;
@@ -93,8 +96,6 @@ namespace Pathfinder {
                 parentNode = nodes[parentIndex];
             }
         }
-
-
 
         public bool Empty => Size == 0;
     }

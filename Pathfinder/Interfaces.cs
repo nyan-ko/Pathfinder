@@ -10,7 +10,7 @@ namespace Pathfinder {
         INode Start { get; }
         INode End { get; }
 
-        float CalculateCost(INode node);
+        //float CalculateCost(INode node);
 
         IPath FindPath();
     }

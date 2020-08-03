@@ -49,14 +49,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BinaryHeap.cs" />
+    <Compile Include="Heuristics\IHeuristic.cs" />
+    <Compile Include="Heuristics\Manhattan.cs" />
     <Compile Include="Interfaces.cs" />
+    <Compile Include="Moves\ActionCost.cs" />
     <Compile Include="Moves\Ascend.cs" />
     <Compile Include="Moves\BaseMovement.cs" />
+    <Compile Include="Moves\Descend.cs" />
+    <Compile Include="Moves\Fall.cs" />
+    <Compile Include="Moves\Pillar.cs" />
     <Compile Include="Moves\Walk.cs" />
     <Compile Include="Nodes.cs" />
     <Compile Include="PlayerProjection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
