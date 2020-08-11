@@ -8,30 +8,25 @@ using Nodes;
 
 namespace Pathfinder.Moves {
     public class Pillar : BaseMovement {
-        private int deltaY;
 
-        public override int dX {
-            get => 0;
-            set { }
-        }
-
-        public override int dY {
-            get => deltaY;
-            set => deltaY = value;
-        }
-
-        public override bool Jump => true;
-
-        public Pillar(int dY) {
-            deltaY = dY;
+        public Pillar(int deltaY) {
+            dY = deltaY;
         }
 
         protected override void UpdateMovementTowardsGoal(ref PlayerProjection player, Vector2 goal, out int frames) {
-            throw new NotImplementedException();
+            frames = 0;
+
+            Vector2 position = player.Center;
+
         }
 
         protected override void UpdateTurnAround(ref PlayerProjection player, out int frames) {
-            throw new NotImplementedException();
+            frames = 0;
+            player.AdjustRunFieldsForTurningAround(-PathfindingUtils.RecklessAbsolute(player.lastDirection));
+            while (player.velocity.X < 0) {
+                player.UpdateTurnAround();
+                frames++;
+            }
         }
     }
 }

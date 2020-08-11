@@ -10,27 +10,15 @@ using Nodes;
 
 namespace Pathfinder.Moves {
     public class Walk : BaseMovement {
-        private int deltaX;
 
-        public override int dX {
-            get => deltaX;
-            set => deltaX = value;
-        }
-
-        public override int dY {
-            get => 0;
-            set { }
-        }
-
-        public override bool Jump => false;
-
-        public Walk(int dX) {
-            deltaX = dX;
+        public Walk(int deltaX, HorizontalDirection direction) {
+            dX = deltaX;
+            RelativeNodeDirection = direction;
         }
 
         protected override void UpdateTurnAround(ref PlayerProjection player, out int frames) {
             frames = 0;
-            player.AdjustRunFieldsForTurningAround(player.direction);
+            player.AdjustRunFieldsForTurningAround(RelativeNodeDirection);
             while (player.velocity.X < 0) {
                 player.UpdateTurnAround();
                 frames++;

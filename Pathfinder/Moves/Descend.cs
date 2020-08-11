@@ -9,32 +9,19 @@ using Nodes;
 
 namespace Pathfinder.Moves {
     public class Descend : BaseMovement {
-        private int deltaX;
-        private int deltaY;
 
-        public Descend(int dX, int dY) {
-            deltaX = dX;
+        public Descend(int deltaX, int deltaY, HorizontalDirection nodeRelativeDirection) {
+            dX = deltaX;
             if (dY > 0) {
                 dY = 0;
             }
-            deltaY = dY;
+            dY = deltaY;
+            RelativeNodeDirection = nodeRelativeDirection;
         }
-
-        public override int dX {
-            get => deltaX;
-            set => deltaX = value;
-        }
-
-        public override int dY {
-            get => deltaY;
-            set => deltaY = value;
-        }
-
-        public override bool Jump => false;
    
         protected override void UpdateTurnAround(ref PlayerProjection player, out int frames) {
             frames = 0;
-            player.AdjustRunFieldsForTurningAround(player.direction);
+            player.AdjustRunFieldsForTurningAround(RelativeNodeDirection);
             while (player.velocity.X < 0) {
                 player.UpdateTurnAround();
                 frames++;
@@ -43,19 +30,10 @@ namespace Pathfinder.Moves {
 
         protected override void UpdateMovementTowardsGoal(ref PlayerProjection player, Vector2 goal, out int frames) {
             frames = 0;
-
             Vector2 position = player.Center;
             float previousDistance = float.MaxValue;
             float distance = position.Distance(goal);
             while (distance > ACCEPTABLE_RANGE_SQUARED) {
-
-                if (player.velocity.Y < player.maxFallSpeed) {
-                    player.velocity.Y += player.gravity;
-                }
-                else if (player.velocity.Y > player.maxFallSpeed) {
-                    player.velocity.Y = player.maxFallSpeed;
-                }
-
                 player.UpdateHorizontalMovement(); 
 
                 distance = position.Distance(goal);
