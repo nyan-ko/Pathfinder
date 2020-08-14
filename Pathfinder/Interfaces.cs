@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Pathfinder.Input;
 using Nodes;
 
 namespace Pathfinder {
@@ -15,8 +16,7 @@ namespace Pathfinder {
 
     public interface IPath {
         bool Complete { get; }
-        bool Optimal { get; }
 
-        AbstractPathNode[] Path { get; }
+        PathfinderTriggersSet Path { get; }
     }
 }

@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 using Terraria;
 using ReLogic;
 using Pathfinder;
+using Pathfinder.Projections;
 using Pathfinder.Moves;
 using Pathfinder.Heuristics;
+using Pathfinder.Input;
 using Microsoft.Xna.Framework;
 
 namespace Nodes
@@ -31,17 +33,12 @@ namespace Nodes
         public ActionCost ActionCost;
         public float CostFromStart;
         public float HeuristicCostToGoal;
-        public NodeStatus Status;
-        public int HeapIndex;
+        public short HeapIndex;
 
         public float Cost => CostFromStart + HeuristicCostToGoal;
-
         public int X => _x;
-
         public int Y => _y;
-
         public int ParentX => pX;
-
         public int ParentY => pY;
 
         protected AbstractPathNode(int x, int y, ActionCost cost, INode goal) {
@@ -49,9 +46,9 @@ namespace Nodes
             _y = y;
             ActionCost = cost;
 
+            CostFromStart = -1;
             HeuristicCostToGoal = CalculateHeuristicCostToGoal(goal);
             HeapIndex = -1;
-            Status = NodeStatus.Open;
         }
 
         public void SetParent(INode parent) {
@@ -64,9 +61,11 @@ namespace Nodes
 
     public class JumpNode {
         public PlayerProjection projectionAtThisNode;
+        public byte Input;
 
-        public JumpNode(PlayerProjection projection) {
+        public JumpNode(PlayerProjection projection, byte input) {
             projectionAtThisNode = projection;
+            Input = input;
         }
     }
 
@@ -119,7 +118,6 @@ namespace Nodes
         public INode Start => startNode;
 
         public INode End => endNode;
-        
 
         public IPath FindPath() {
             bool foundPath = false;
@@ -142,8 +140,22 @@ namespace Nodes
                 }
             }
 
-            List<JumpNodeCollection> retracedSteps = RetraceSteps();
+            if (foundPath) {
+                PathfinderTriggersSet triggersSet = new PathfinderTriggersSet();
+                List<Trigger> triggers = new List<Trigger>();
+                int lastJumpNodeIndex = 0;
 
+                foreach (var step in RetraceSteps()) {
+                    triggers.Add(new Trigger(step.Nodes[lastJumpNodeIndex].Input, step.ActionCost.TotalCost, step.CostFromStart));
+                    lastJumpNodeIndex = step.ParentJumpNodeIndex;
+                }
+
+                triggersSet.SetList(triggers);
+
+                return new AStarPath(true, triggersSet);
+            }
+
+            return null; // idk what to do yet for this
         }
 
         private List<JumpNodeCollection> RetraceSteps() {
@@ -163,6 +175,8 @@ namespace Nodes
 
         private void SearchNeighbours(JumpNodeCollection parent) {
             for (byte i = 0; i < parent.Nodes.Count; i++) {
+                byte input = 1;
+
                 foreach (BaseMovement movement in availableMoves) {
                     int currentX = parent.X + movement.dX;
                     int currentY = parent.Y + movement.dY;
@@ -174,12 +188,12 @@ namespace Nodes
                         var neighbouringNode = GetNode(currentX, currentY, hash);
 
                         if (!neighbouringNode.ContainsJump(movementProjection.jump)) {
-                            neighbouringNode.AddNode(new JumpNode(movementProjection));
+                            neighbouringNode.AddNode(new JumpNode(movementProjection, input));
                         }
 
                         float newNeighbourCost = parent.CostFromStart + nodeCost.TotalCost;
 
-                        if (neighbouringNode.CostFromStart - newNeighbourCost > MINIMUM_IMPROVEMENT) {
+                        if (neighbouringNode.CostFromStart - newNeighbourCost > MINIMUM_IMPROVEMENT || neighbouringNode.CostFromStart == -1) {
                             neighbouringNode.ActionCost = nodeCost;
                             neighbouringNode.CostFromStart = newNeighbourCost;
                             neighbouringNode.SetParent(parent);
@@ -192,6 +206,8 @@ namespace Nodes
                             }
                         }
                     }
+
+                    input++;
                 }
             }
         }

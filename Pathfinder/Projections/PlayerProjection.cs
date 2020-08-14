@@ -8,12 +8,13 @@ using Terraria;
 using Terraria.DataStructures;
 using OTAPI.Tile;
 using Pathfinder.Moves;
+using Pathfinder.Structs;
 using Nodes;
 
 namespace Pathfinder.Projections {
     public struct PlayerProjection {  // trace on
-        public Vector2 position;
-        public Vector2 velocity;  // TODO make this private and just have it be a get
+        public PixelPosition position;
+        public PixelPosition velocity;  // TODO make this private and just have it be a get
         public int width;
         public int height;
 
@@ -31,15 +32,15 @@ namespace Pathfinder.Projections {
         private Rectangle boundingBox;
         private PlayerStats _stats;
 
-        public PlayerProjection(Player player, PlayerStats stats) {
-            position = player.position;
-            velocity = player.velocity;
+        public PlayerProjection(Player player) {
+            position = new PixelPosition(player.position);
+            velocity = new PixelPosition(player.velocity);
             width = player.width;
             height = player.height;
 
             jump = player.jump;
             jumping = false;
-            gravity = player.gravity;
+            gravity = Player.defaultGravity;
             onGround = true;
             lastDirection = 1;
             maxRunSpeed = player.maxRunSpeed;
@@ -48,7 +49,7 @@ namespace Pathfinder.Projections {
             accessoryRunSpeed = player.accRunSpeed;
 
             boundingBox = new Rectangle((int)position.X, (int)position.Y, width - 1, height - 1);
-            _stats = stats;
+            _stats = new PlayerStats(player);
             pickaxes = new PickaxeProjection[1];
             ScanInventory();
         }
@@ -57,15 +58,11 @@ namespace Pathfinder.Projections {
             
         }
 
-        public bool ValidPosition(Vector2 tilePosition, bool canBeInAir, HorizontalDirection playerDirectionRelativeToBlock) {
-            if (tilePosition.X > Main.maxTilesX || tilePosition.Y > Main.maxTilesY) {
-                throw new InvalidOperationException("Position passed was likely in pixels instead of tiles.");
-            }
-
+        public bool ValidPosition(TilePosition tilePosition, bool canBeInAir, HorizontalDirection playerDirectionRelativeToBlock) {
             int offset = (int)playerDirectionRelativeToBlock;
 
-            for (int x = (int)(tilePosition.X + offset); x != tilePosition.X; x -= offset) {
-                for (int y = (int)tilePosition.Y; y < tilePosition.Y + 3; y++) {
+            for (int x = tilePosition.X + offset; x != tilePosition.X; x -= offset) {
+                for (int y = tilePosition.Y; y < tilePosition.Y + 3; y++) {
                     if (!PathfindingUtils.IsTileAir(x, y)) {
                         return false;
                     }
@@ -75,15 +72,40 @@ namespace Pathfinder.Projections {
             return true;
         }
 
-        public void UpdateTurnAround() {
-            if (velocity.X < runSlowdown) {
-                velocity.X += runSlowdown;
-            }
-
-            UpdatePosition();
+        public void UpdateTurnAroundMovement() {
+            IncrementTurnAroundMovement();
+            UpdatePositionInWorld();
         }
 
         public void UpdateHorizontalMovement() {
+            IncrementHorizontalMovement();
+            UpdatePositionInWorld();
+        }
+
+        public void UpdateFallMovement() {
+            IncrementFallMovement();
+            UpdatePositionInWorld();
+        }
+
+        public void UpdateMovingFallMovement() {
+            IncrementFallMovement();
+            IncrementHorizontalMovement();
+            UpdatePositionInWorld();
+        }
+
+        public void UpdateJumpMovement() {
+            IncrementJumpMovement();
+            UpdatePositionInWorld();
+        }
+
+        public void UpdateMovingJumpMovement() {
+            IncrementJumpMovement();
+            IncrementHorizontalMovement();
+            UpdatePositionInWorld();
+        }
+
+        #region Increments
+        private void IncrementHorizontalMovement() {
             if (velocity.X < maxRunSpeed) {
                 velocity.X += runAcceleration;
             }
@@ -92,7 +114,21 @@ namespace Pathfinder.Projections {
             }
         }
 
-        public void UpdateFallMovement() {
+        private void IncrementJumpMovement() {
+            if (jump > 0) {
+                if (velocity.Y == 0) {
+                    jump = 0;
+                }
+                else {
+                    velocity.Y = -_stats.jumpSpeed;
+                }
+            }
+            else {
+                IncrementFallMovement();
+            }
+        }
+
+        private void IncrementFallMovement() {
             if (velocity.Y < _stats.maxFallSpeed) {
                 velocity.Y += gravity;
             }
@@ -101,18 +137,16 @@ namespace Pathfinder.Projections {
             }
         }
 
-        public void StartJumping() {
-            jumping = true;
-            velocity.Y = -_stats.jumpSpeed;
+        private void IncrementTurnAroundMovement() {
+            if (velocity.X < runSlowdown) {
+                velocity.X += runSlowdown;
+            }
         }
+        #endregion
 
-        public void UpdatePositionInWorld() {
-            velocity = Collision.TileCollision(position, velocity, width, height);
-            position += velocity;
-        }
-
-        public bool UpdatePositionInWorld(out Vector2 velocité) {
-            // this whole method is taken from Collision.TileCollision()
+        // clamps velocity to prevent collision with surrounding tiles
+        private bool UpdatePositionInWorld() {
+            // this method is taken from Collision.TileCollision()
             int lowerXBound = (int)(position.X / 16) - 1;
             int lowerYBound = (int)(position.Y / 16) - 1;
             int upperXBound = (int)((position.X + width) / 16) + 2;
@@ -121,7 +155,7 @@ namespace Pathfinder.Projections {
             int xIntersectionLastY = -1;
             int yIntersectionLastX = -1;
             int yIntersectionLastY = -1;
-            velocité = velocity;
+            PixelPosition velocité = velocity;
             for (int x = lowerXBound; x < upperXBound; ++x) {
                 for (int y = lowerYBound; y < upperYBound; ++y) {
                     if (!PathfindingUtils.IsTileAir(x, y)) {
@@ -180,19 +214,10 @@ namespace Pathfinder.Projections {
                     }
                 }
             }
-            return velocité != velocity;
-        }
-
-        private CollisionType DetermineCollisionType(int tilePixelX, int tilePixelY, ITile tile) {
-            if (position.Y + height <= tilePixelY)
-                return CollisionType.Bottom;
-            if (position.X + width <= tilePixelX && !Main.tileSolidTop[tile.type])
-                return CollisionType.Right;
-            if (position.X >= tilePixelX + 16 && !Main.tileSolidTop[tile.type])
-                return CollisionType.Left;
-            if (position.Y >= tilePixelY + 16 && !Main.tileSolidTop[tile.type])
-                return CollisionType.Top;
-            return CollisionType.None;
+            bool velocityChanged = velocity != velocité;
+            velocity = velocité;
+            position += velocity;
+            return velocityChanged;
         }
 
         public bool IsIntersectingWithTile(int tilePixelX, int tilePixelY) {
@@ -217,43 +242,44 @@ namespace Pathfinder.Projections {
             lastDirection = (sbyte)direction; 
         }
 
-        public Vector2 Center {
+        #region Entity Position thing i cant think of a word rn
+        public PixelPosition Center {
             get {
-                return new Vector2(position.X + (width / 2), position.Y + (height / 2));
+                return new PixelPosition(position.X + (width / 2), position.Y + (height / 2));
             }
             set {
-                position = new Vector2(value.X - (width / 2), value.Y - (height / 2));
+                position = new PixelPosition(value.X - (width / 2), value.Y - (height / 2));
             }
         }
 
-        public Vector2 Left {
+        public PixelPosition Left {
             get {
-                return new Vector2(position.X, position.Y + (height / 2));
+                return new PixelPosition(position.X, position.Y + (height / 2));
             }
             set {
-                position = new Vector2(value.X, value.Y - (height / 2));
+                position = new PixelPosition(value.X, value.Y - (height / 2));
             }
         }
 
-        public Vector2 Right {
+        public PixelPosition Right {
             get {
-                return new Vector2(position.X + width, position.Y + (height / 2));
+                return new PixelPosition(position.X + width, position.Y + (height / 2));
             }
             set {
-                position = new Vector2(value.X - width, value.Y - (height / 2));
+                position = new PixelPosition(value.X - width, value.Y - (height / 2));
             }
         }
 
-        public Vector2 Top {
+        public PixelPosition Top {
             get {
-                return new Vector2(position.X + (width / 2), position.Y);
+                return new PixelPosition(position.X + (width / 2), position.Y);
             }
             set {
-                position = new Vector2(value.X - (width / 2), value.Y);
+                position = new PixelPosition(value.X - (width / 2), value.Y);
             }
         }
 
-        public Vector2 TopLeft {
+        public PixelPosition TopLeft {
             get {
                 return position;
             }
@@ -262,40 +288,41 @@ namespace Pathfinder.Projections {
             }
         }
 
-        public Vector2 TopRight {
+        public PixelPosition TopRight {
             get {
-                return new Vector2(position.X + width, position.Y);
+                return new PixelPosition(position.X + width, position.Y);
             }
             set {
-                position = new Vector2(value.X - width, value.Y);
+                position = new PixelPosition(value.X - width, value.Y);
             }
         }
 
-        public Vector2 Bottom {
+        public PixelPosition Bottom {
             get {
-                return new Vector2(position.X + (width / 2), position.Y + height);
+                return new PixelPosition(position.X + (width / 2), position.Y + height);
             }
             set {
-                position = new Vector2(value.X - (width / 2), value.Y - height);
+                position = new PixelPosition(value.X - (width / 2), value.Y - height);
             }
         }
 
-        public Vector2 BottomLeft {
+        public PixelPosition BottomLeft {
             get {
-                return new Vector2(position.X, position.Y + height);
+                return new PixelPosition(position.X, position.Y + height);
             }
             set {
-                position = new Vector2(value.X, value.Y - height);
+                position = new PixelPosition(value.X, value.Y - height);
             }
         }
 
-        public Vector2 BottomRight {
+        public PixelPosition BottomRight {
             get {
-                return new Vector2(position.X + width, position.Y + height);
+                return new PixelPosition(position.X + width, position.Y + height);
             }
             set {
-                position = new Vector2(value.X - width, value.Y - height);
+                position = new PixelPosition(value.X - width, value.Y - height);
             }
         }
+        #endregion
     }
 }

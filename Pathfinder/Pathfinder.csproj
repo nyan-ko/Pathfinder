@@ -48,6 +48,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AStarPath.cs" />
     <Compile Include="BinaryHeap.cs" />
     <Compile Include="Heuristics\IHeuristic.cs" />
     <Compile Include="Heuristics\Manhattan.cs" />

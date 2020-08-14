@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
+
 using Nodes;
+using Pathfinder.Structs;
 using Pathfinder.Projections;
 using Terraria;
 
@@ -27,60 +29,30 @@ namespace Pathfinder.Moves {
             frames = 0;
             player.AdjustRunFieldsForTurningAround(RelativeNodeDirection);
             while (player.velocity.X < 0) {
-                player.UpdateTurnAround();
+                player.UpdateTurnAroundMovement();
                 frames++;
             }
         }
 
-        protected override void UpdateMovementTowardsGoal(ref PlayerProjection player, Vector2 goal, out int frames) {
+        protected override void UpdateMovementTowardsGoal(ref PlayerProjection player, PixelPosition goal, out int frames) {
             frames = 0;
-            if (player.jumping) {
-                player.StartJumping();
-            }
-            int goalX = (int)(goal.X * 16);
-            int goalY = (int)(goal.Y * 16);
+            int goalX = (int)goal.X;
+            int goalY = (int)goal.Y;
             float previousDistance = float.MaxValue;
             while (!player.IsIntersectingWithTile(goalX, goalY)) {
-                if (player.jump <= 0) {
+                player.UpdateMovingFallMovement();
+                float distance = player.Center.Distance(goalX + xTilePixelOffset, goalY + 15);
+                    
+                if (distance < previousDistance) {
+                    previousDistance = distance;
+                }
+                else {
                     frames = IMPOSSIBLE_FRAME_COST;
+                    return;
                 }
 
-                player.jump--;
-                player.UpdateHorizontalMovement();
-                float distance = player.Center.Distance
+                frames++;
             }
-
-            //frames = 0;
-
-            //player.StartJumping();
-
-            //Vector2 position = player.Center;
-            //float previousDistance = float.MaxValue;
-            //float distance = position.Distance(goal);
-            //while (distance > ACCEPTABLE_RANGE_SQUARED) {
-            //    if (player.jump <= 0) {
-            //        frames = IMPOSSIBLE_FRAME_COST;
-            //        player.Center = position;
-            //        return;
-            //    }
-
-            //    player.jump--;
-            //    player.UpdateHorizontalMovement();
-            //    distance = position.Distance(goal);
-
-            //    if (previousDistance > distance) {
-            //        previousDistance = distance;
-            //    }
-            //    else {
-            //        frames = IMPOSSIBLE_FRAME_COST;
-            //        player.Center = position;
-            //        return;
-            //    }
-
-            //    frames++;
-            //}
-
-            //player.Center = position;
         }
     }
 }

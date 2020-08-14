@@ -5,7 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Pathfinder.Projections {
+    [Flags]
     public enum CollisionType : byte {
-        None, Top, Left, Bottom, Right
+        None, Horizontal, Vertical
     }
 }

@@ -18,7 +18,7 @@ namespace Pathfinder.Input {
             inputs.OrderBy(x => x.DelayFromStart);
         }
 
-        public void Update() {
+        private void UpdateInternalInputs() {
             if (oldInputs.Count != 0) {
                 foreach (var input in oldInputs) {
                     KeyStatus[input] = false;
@@ -42,13 +42,24 @@ namespace Pathfinder.Input {
                         continue;
                     }
 
-                    KeyStatus[trigger.Input] = true;
-                    oldInputs.Add(trigger.Input);
-                    trigger.Duration--;
+                    var inputs = trigger.Input.Split(Trigger.INPUT_SEPARATOR);
+
+                    for (int m = 0; m < inputs.Length; m++) {
+                        string actualInput = inputs[m];
+                        KeyStatus[actualInput] = true;
+                        oldInputs.Add(actualInput);
+                        trigger.Duration--;
+                    }
                 }
             }
 
             frameCount++;
+        }
+
+        public void Update() {
+            if (inputs?.Count > 0) {
+                UpdateInternalInputs();
+            }
         }
     }
 }

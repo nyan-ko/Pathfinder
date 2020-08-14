@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Pathfinder.Projections;
 using Terraria;
+using Pathfinder.Structs;
 using Microsoft.Xna.Framework;
 using Nodes;
 
@@ -21,13 +22,13 @@ namespace Pathfinder.Moves {
         protected const int IMPOSSIBLE_FRAME_COST = int.MaxValue;
 
         public ActionCost CalculateCost(ref PlayerProjection player) {
-            Vector2 goalLocation = player.Center + new Vector2(dX * 16, dY * 16);
+            var goalLocation = player.Center + new PixelPosition(dX * 16, dY * 16);
 
-            bool standingStill = player.velocity == Vector2.Zero;
+            bool standingStill = player.velocity == PixelPosition.Zero;
             bool playerGoingWrongWay = !standingStill && (player.velocity.X < 0 && player.lastDirection == 1 ||
                 player.velocity.X > 0 && player.lastDirection == -1);
 
-            if (!player.ValidPosition(goalLocation / 16f, true, RelativeNodeDirection))
+            if (!player.ValidPosition(new TilePosition(goalLocation), true, RelativeNodeDirection))
                 return IMPOSSIBLE_COST;
 
             int turnFrames = 0;
@@ -41,7 +42,7 @@ namespace Pathfinder.Moves {
         }
 
         protected abstract void UpdateTurnAround(ref PlayerProjection player, out int frames);
-        protected abstract void UpdateMovementTowardsGoal(ref PlayerProjection player, Vector2 goal, out int frames);
+        protected abstract void UpdateMovementTowardsGoal(ref PlayerProjection player, PixelPosition goal, out int frames);
 
         public static BaseMovement[] GetAllMoves() {
             BaseMovement[] movements = new BaseMovement[8];

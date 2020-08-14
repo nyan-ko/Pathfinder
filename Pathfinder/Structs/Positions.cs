@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Xna.Framework;
 using System.Threading.Tasks;
 
 namespace Pathfinder.Structs {
@@ -15,16 +16,21 @@ namespace Pathfinder.Structs {
         }
 
         public TilePosition(PixelPosition pixelPosition) {
-            X = pixelPosition.X / 16;
-            Y = pixelPosition.Y / 16;
+            X = (int)pixelPosition.X / 16;
+            Y = (int)pixelPosition.Y / 16;
+        }
+
+        public TilePosition(Vector2 tilePosition) {
+            X = (int)tilePosition.X;
+            Y = (int)tilePosition.Y;
         }
     }
 
     public struct PixelPosition {
-        public int X;
-        public int Y;
+        public float X;
+        public float Y;
         
-        public PixelPosition(int x, int y) {
+        public PixelPosition(float x, float y) {
             X = x;
             Y = y;
         }
@@ -34,10 +40,33 @@ namespace Pathfinder.Structs {
             Y = tilePosition.Y * 16;
         }
 
-        public float Distance(PixelPosition compare) {
-            var x = X - compare.X;
-            var y = Y - compare.Y;
-            return x * x + y * y;
+        public PixelPosition(Vector2 pixelPosition) {
+            X = (int)pixelPosition.X;
+            Y = (int)pixelPosition.Y;
         }
+
+        public float Distance(PixelPosition compare) => Distance(compare.X, compare.Y);
+
+        public float Distance(float x, float y) {
+            var _x = X - x;
+            var _y = Y - y;
+            return _x * _x + _y * _y;
+        }
+
+        public static bool operator != (PixelPosition o, PixelPosition c) {
+            return o.X != c.X || o.Y != c.Y;
+        }
+
+        public static bool operator == (PixelPosition o, PixelPosition c) {
+            return o.X == c.X && o.Y == c.Y;
+        }
+
+        public static PixelPosition operator + (PixelPosition o, PixelPosition c) {
+            o.X += c.X;
+            o.Y += c.Y;
+            return o;
+        }
+
+        public static readonly PixelPosition Zero = new PixelPosition(0, 0);
     }
 }

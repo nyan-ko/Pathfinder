@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Nodes;
+using Pathfinder.Projections;
+using Pathfinder.Structs;
 
 namespace Pathfinder.Moves {
     public class Pillar : BaseMovement {
@@ -13,18 +15,32 @@ namespace Pathfinder.Moves {
             dY = deltaY;
         }
 
-        protected override void UpdateMovementTowardsGoal(ref PlayerProjection player, Vector2 goal, out int frames) {
-            frames = 0;
-
-            Vector2 position = player.Center;
-
-        }
-
         protected override void UpdateTurnAround(ref PlayerProjection player, out int frames) {
             frames = 0;
-            player.AdjustRunFieldsForTurningAround(-PathfindingUtils.RecklessAbsolute(player.lastDirection));
+            player.AdjustRunFieldsForTurningAround(RelativeNodeDirection);
             while (player.velocity.X < 0) {
-                player.UpdateTurnAround();
+                player.UpdateTurnAroundMovement();
+                frames++;
+            }
+        }
+
+        protected override void UpdateMovementTowardsGoal(ref PlayerProjection player, PixelPosition goal, out int frames) {
+            frames = 0;
+            int goalX = (int)goal.X;
+            int goalY = (int)goal.Y;
+            float previousDistance = float.MaxValue;
+            while (!player.IsIntersectingWithTile(goalX, goalY)) {
+                player.UpdateJumpMovement();
+                float distance = player.Center.Distance(goalX + 7, goalY + 15);
+
+                if (distance < previousDistance) {
+                    previousDistance = distance;
+                }
+                else {
+                    frames = IMPOSSIBLE_FRAME_COST;
+                    return;
+                }
+
                 frames++;
             }
         }
