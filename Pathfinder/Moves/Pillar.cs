@@ -17,7 +17,7 @@ namespace Pathfinder.Moves {
 
         protected override void UpdateTurnAround(ref PlayerProjection player, out int frames) {
             frames = 0;
-            player.AdjustRunFieldsForTurningAround(RelativeNodeDirection);
+            player.AdjustRunFieldsForTurningAround(-player.lastDirection);
             while (player.velocity.X < 0) {
                 player.UpdateTurnAroundMovement();
                 frames++;

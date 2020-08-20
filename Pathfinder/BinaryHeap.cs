@@ -8,10 +8,10 @@ using Nodes;
 namespace Pathfinder {
     public class BinaryNodeHeap<T> where T : AbstractPathNode {
         private T[] nodes;
-        public short Size { get; private set; }  // exclusive upper limit
+        public short Size { get; private set; } 
 
         public BinaryNodeHeap(short size = 1024) {
-            Size = size;
+            Size = 0;
             nodes = new T[size]; 
         }
 
@@ -19,9 +19,9 @@ namespace Pathfinder {
             if (Size >= nodes.Length - 1) {
                 Array.Resize(ref nodes, nodes.Length << 1);
             }
-            Size++;
             node.HeapIndex = Size;
             nodes[Size] = node;
+            Size++;
             MaintainHeapStructure(node);
         }
 
@@ -31,7 +31,7 @@ namespace Pathfinder {
             }
 
             T result = nodes[0];
-            T movedNode = nodes[Size];
+            T movedNode = nodes[Size - 1];
 
             UpdateNode(movedNode, 0);
             nodes[Size] = null;

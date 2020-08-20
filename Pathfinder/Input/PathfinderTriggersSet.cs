@@ -61,5 +61,7 @@ namespace Pathfinder.Input {
                 UpdateInternalInputs();
             }
         }
+
+        public bool DoneInputting => inputs?.Count == 0;
     }
 }

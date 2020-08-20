@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 using System.Threading.Tasks;
-using OTAPI;
 using Terraria;
 using Nodes;
 using Pathfinder.Projections;

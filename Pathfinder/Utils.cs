@@ -2,16 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OTAPI.Tile;
 using Terraria;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 
 namespace Pathfinder {
     public static class PathfindingUtils {
-        public static int GetNodeHash(int x, int y) {
-            int hash = 5011;
-            hash = 8957 * hash + x;
+        public static long GetNodeHash(int x, int y) {
+            long hash = 501134401;
+            hash = 89577541 * hash + x;
             hash = 46587 * hash + y;
             return hash;
         }
@@ -30,8 +29,8 @@ namespace Pathfinder {
             return value > 0 ? value : -value;  // gets rid of 2 if checks woo so fast
         }
 
-        public static bool IsTileAir(int x, int y) {
-            ITile tile = Main.tile[x, y];
+        public static bool IsTileSolid(int x, int y) {
+            Tile tile = Main.tile[x, y];
             return tile != null && Main.tileSolid[tile.type] && tile.active() && !tile.inActive();
         }
     }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Xna.Framework;
-using System.Threading.Tasks;
+﻿using Microsoft.Xna.Framework;
 
 namespace Pathfinder.Structs {
     public struct TilePosition {
@@ -51,6 +46,12 @@ namespace Pathfinder.Structs {
             var _x = X - x;
             var _y = Y - y;
             return _x * _x + _y * _y;
+        }
+
+        public PixelPosition ClampToClosestTile() {
+            X -= X % 16;
+            Y -= Y % 16;
+            return this;
         }
 
         public static bool operator != (PixelPosition o, PixelPosition c) {

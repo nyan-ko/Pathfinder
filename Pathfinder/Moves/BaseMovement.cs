@@ -19,10 +19,10 @@ namespace Pathfinder.Moves {
         protected const float ACCEPTABLE_RANGE = 0.25F;
         protected const float ACCEPTABLE_RANGE_SQUARED = ACCEPTABLE_RANGE * ACCEPTABLE_RANGE;
         protected static readonly ActionCost IMPOSSIBLE_COST = ActionCost.ImpossibleCost;
-        protected const int IMPOSSIBLE_FRAME_COST = int.MaxValue;
+        protected const int IMPOSSIBLE_FRAME_COST = -1;
 
         public ActionCost CalculateCost(ref PlayerProjection player) {
-            var goalLocation = player.Center + new PixelPosition(dX * 16, dY * 16);
+            var goalLocation = player.position.ClampToClosestTile() + new PixelPosition(dX * 16, dY * -16);
 
             bool standingStill = player.velocity == PixelPosition.Zero;
             bool playerGoingWrongWay = !standingStill && (player.velocity.X < 0 && player.lastDirection == 1 ||
@@ -38,7 +38,7 @@ namespace Pathfinder.Moves {
 
             UpdateMovementTowardsGoal(ref player, goalLocation, out int frames);
 
-            return new ActionCost(turnFrames, frames, Jump);
+            return ActionCost.CreateActionCost(turnFrames, frames, Jump);
         }
 
         protected abstract void UpdateTurnAround(ref PlayerProjection player, out int frames);

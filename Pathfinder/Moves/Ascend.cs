@@ -40,7 +40,7 @@ namespace Pathfinder.Moves {
             int goalY = (int)goal.Y;
             float previousDistance = float.MaxValue;
             while (!player.IsIntersectingWithTile(goalX, goalY)) {
-                player.UpdateMovingFallMovement();
+                player.UpdateMovingJumpMovement();
                 float distance = player.Center.Distance(goalX + xTilePixelOffset, goalY + 15);
                     
                 if (distance < previousDistance) {

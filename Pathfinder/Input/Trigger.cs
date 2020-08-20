@@ -19,7 +19,7 @@ namespace Pathfinder.Input {
         }
 
         public Trigger(byte input, float duration, float delay) {
-            if (!StringInputsByNodeInputs.TryGetValue(input, out string strInput)) {
+            if (!StringInputsByNodeInputs.TryGetValue(input, out string strInput) && input != 0) {
                 throw new InvalidOperationException();
             }
 

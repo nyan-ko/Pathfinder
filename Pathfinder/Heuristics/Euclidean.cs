@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nodes;
 
 namespace Pathfinder.Heuristics {
-    public struct Manhattan : IHeuristic {
+    public struct Euclidean : IHeuristic {
         public float EstimateCost(int x, int y, int goalX, int goalY) {
-            return Math.Abs(x - goalX) + Math.Abs(y - goalY);
+            int dX = x - goalX;
+            int dY = y - goalY;
+            return dX * dX + dY + dY;
         }
     }
 }

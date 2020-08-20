@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.DataStructures;
-using OTAPI.Tile;
 using Pathfinder.Moves;
 using Pathfinder.Structs;
 using Nodes;
@@ -38,7 +37,7 @@ namespace Pathfinder.Projections {
             width = player.width;
             height = player.height;
 
-            jump = player.jump;
+            jump = 15;
             jumping = false;
             gravity = Player.defaultGravity;
             onGround = true;
@@ -59,11 +58,11 @@ namespace Pathfinder.Projections {
         }
 
         public bool ValidPosition(TilePosition tilePosition, bool canBeInAir, HorizontalDirection playerDirectionRelativeToBlock) {
-            int offset = (int)playerDirectionRelativeToBlock;
+            int offset = (int)playerDirectionRelativeToBlock == -1 ? -1 : 1;
 
-            for (int x = tilePosition.X + offset; x != tilePosition.X; x -= offset) {
+            for (int x = tilePosition.X - offset; x != tilePosition.X; x += offset) {
                 for (int y = tilePosition.Y; y < tilePosition.Y + 3; y++) {
-                    if (!PathfindingUtils.IsTileAir(x, y)) {
+                    if (PathfindingUtils.IsTileSolid(x, y)) {
                         return false;
                     }
                 }
@@ -116,12 +115,8 @@ namespace Pathfinder.Projections {
 
         private void IncrementJumpMovement() {
             if (jump > 0) {
-                if (velocity.Y == 0) {
-                    jump = 0;
-                }
-                else {
-                    velocity.Y = -_stats.jumpSpeed;
-                }
+                velocity.Y = -_stats.jumpSpeed;
+                jump--;
             }
             else {
                 IncrementFallMovement();
@@ -158,16 +153,17 @@ namespace Pathfinder.Projections {
             PixelPosition velocité = velocity;
             for (int x = lowerXBound; x < upperXBound; ++x) {
                 for (int y = lowerYBound; y < upperYBound; ++y) {
-                    if (!PathfindingUtils.IsTileAir(x, y)) {
+                    if (PathfindingUtils.IsTileSolid(x, y)) {
                         int pX = x * 16;
                         int pY = y * 16;
 
-                        if (IsIntersectingWithTile(pX, pY)) {
-                            var tile = Main.tile[x, y];
+                        if (IsIntersectingWithTile(pX, pY)) { // dumb dumb never triggers
+                            var tile = Main.tile[x, y];  
 
                             if (position.Y + height <= pY) {
                                 yIntersectionLastX = x;
                                 yIntersectionLastY = y;
+                                jump = 15;
                                 if (yIntersectionLastX != xIntersectionLastX) {
                                     velocité.Y = pY - (position.Y + height);
                                 }
@@ -206,6 +202,7 @@ namespace Pathfinder.Projections {
                                 yIntersectionLastX = x;
                                 yIntersectionLastY = y;
                                 velocité.Y = pY + (16 - position.Y);
+                                jump = 0;
                                 if (yIntersectionLastY == xIntersectionLastY) {
                                     velocité.X = velocity.X;
                                 }
