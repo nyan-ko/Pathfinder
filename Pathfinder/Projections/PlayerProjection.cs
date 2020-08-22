@@ -73,11 +73,13 @@ namespace Pathfinder.Projections {
 
         public void UpdateTurnAroundMovement() {
             IncrementTurnAroundMovement();
+            IncrementFallMovement();
             UpdatePositionInWorld();
         }
 
         public void UpdateHorizontalMovement() {
             IncrementHorizontalMovement();
+            IncrementFallMovement();
             UpdatePositionInWorld();
         }
 
@@ -116,7 +118,6 @@ namespace Pathfinder.Projections {
         private void IncrementJumpMovement() {
             if (jump > 0) {
                 velocity.Y = -_stats.jumpSpeed;
-                jump--;
             }
             else {
                 IncrementFallMovement();
@@ -137,10 +138,19 @@ namespace Pathfinder.Projections {
                 velocity.X += runSlowdown;
             }
         }
+
+        private void DecrementJump() {
+            if (jump <= 0) {
+                //jump = 0;
+                return;
+            }
+            jump--;
+        }
         #endregion
 
         // clamps velocity to prevent collision with surrounding tiles
         private bool UpdatePositionInWorld() {
+            DecrementJump();
             // this method is taken from Collision.TileCollision()
             int lowerXBound = (int)(position.X / 16) - 1;
             int lowerYBound = (int)(position.Y / 16) - 1;

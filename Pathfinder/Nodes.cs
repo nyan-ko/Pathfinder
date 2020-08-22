@@ -35,7 +35,7 @@ namespace Nodes
         public float HeuristicCostToGoal;
         public short HeapIndex;
 
-        public float Cost => CostFromStart != -1 ? CostFromStart + HeuristicCostToGoal : float.MaxValue;
+        public virtual float Cost => CostFromStart != -1 ? CostFromStart + HeuristicCostToGoal : float.MaxValue;
         public int X => _x;
         public int Y => _y;
         public int ParentX => pX;
@@ -98,7 +98,7 @@ namespace Nodes
         private const float MINIMUM_IMPROVEMENT = 0.1F;
         public static readonly IHeuristic Heuristic = new Manhattan();
 
-        public int ExploreLimit { get; set; } = 2500;
+        public int ExploreLimit { get; set; } = 300;
 
         private BaseMovement[] availableMoves;
         private BinaryNodeHeap<JumpNodeCollection> openSet;
@@ -109,7 +109,7 @@ namespace Nodes
         public AStarPathfinder(int startX, int startY, int endX, int endY, Player startingProjection) {
             startNode = new JumpNodeCollection(startX, startY, endX, endY) { CostFromStart = 0 };
             startNode.Nodes.Add(new JumpNode(new PlayerProjection(startingProjection), 0));
-            endNode = new JumpNodeCollection(endX, endY, endX, endY);
+            endNode = new JumpNodeCollection(endX, endY, endX, endY) { CostFromStart = -1 };
             availableMoves = BaseMovement.GetAllMoves();
             nodeHashDictionary = new Dictionary<long, JumpNodeCollection>();
             openSet = new BinaryNodeHeap<JumpNodeCollection>();
@@ -126,15 +126,19 @@ namespace Nodes
             openSet.Add(startNode);
             int count = 0;
 
+            INode lastNode = startNode;
+
             while (!foundPath) { 
                 JumpNodeCollection currentNode = openSet.TakeLowest();
 
                 if (currentNode.X == endNode.X && currentNode.Y == endNode.Y) {
+                    endNode.SetParent(lastNode);
                     foundPath = true;
                     break;
                 }
 
                 SearchNeighbours(currentNode);
+                lastNode = currentNode;
                 count++;
 
                 if (count >= ExploreLimit) {
@@ -147,7 +151,7 @@ namespace Nodes
                 List<Trigger> triggers = new List<Trigger>();
                 int lastJumpNodeIndex = 0;
 
-                foreach (var step in RetraceSteps()) {
+                foreach (var step in RetraceSteps().Skip(1)) {
                     triggers.Add(new Trigger(step.Nodes[lastJumpNodeIndex].Input, step.ActionCost.TotalCost, step.CostFromStart));
                     lastJumpNodeIndex = step.ParentJumpNodeIndex;
                 }
@@ -162,11 +166,11 @@ namespace Nodes
 
         private List<JumpNodeCollection> RetraceSteps() {
             List<JumpNodeCollection> steps = new List<JumpNodeCollection>();
-            long hash = PathfindingUtils.GetNodeHash(endNode.X, endNode.Y);
-            JumpNodeCollection currentNode = GetNode(-1, -1, hash);
+            JumpNodeCollection currentNode = endNode;
+            steps.Add(currentNode);
 
-            while (currentNode.X != startNode.X && currentNode.Y != startNode.Y) {
-                hash = PathfindingUtils.GetNodeHash(currentNode.ParentX, currentNode.ParentY);
+            while (currentNode.ParentX != startNode.X && currentNode.ParentX != startNode.Y) {
+                long hash = PathfindingUtils.GetNodeHash(currentNode.ParentX, currentNode.ParentY);
                 JumpNodeCollection parentNode = GetNode(-1, -1, hash);
                 steps.Add(parentNode);
                 currentNode = parentNode;

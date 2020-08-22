@@ -7,11 +7,15 @@ using Terraria.GameInput;
 
 namespace Pathfinder.Input {
     public class PathfinderTriggersSet : TriggersSet {
-        private List<Trigger> inputs;
+        private List<Trigger> inputs = new List<Trigger>();
         private List<Trigger> activeInputs = new List<Trigger>();
         private List<string> oldInputs = new List<string>();
 
         private long frameCount = 0;
+
+        public PathfinderTriggersSet() {
+            SetupKeys();
+        }
 
         public void SetList(List<Trigger> triggers) {
             inputs = triggers;
@@ -31,6 +35,10 @@ namespace Pathfinder.Input {
                 activeInputs.Add(inputs[i]);
                 inputs.RemoveAt(i);
                 i++;
+
+                if (i >= inputs.Count) {
+                    break;
+                }
             }
 
             if (activeInputs.Count != 0) {
@@ -57,8 +65,10 @@ namespace Pathfinder.Input {
         }
 
         public void Update() {
-            if (inputs?.Count > 0) {
-                UpdateInternalInputs();
+            lock (inputs) {
+                if (inputs.Count > 0) {
+                    UpdateInternalInputs();
+                }
             }
         }
 
