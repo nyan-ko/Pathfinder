@@ -15,6 +15,13 @@ namespace Pathfinder {
             return hash;
         }
 
+        public static bool IsEntityIntersectingWithEntity(float x, float y, float width, float height, float x2, float y2, float w2, float h2) {
+            return x < x2 + w2 &&
+                x + width > x2 &&
+                y < y2 + h2 &&
+                y + height > y2;
+        }
+
         public static Vector2 AbsoluteDifference(this Vector2 origin, Vector2 compare) {
             return new Vector2(Math.Abs(origin.X - compare.X), Math.Abs(origin.Y - compare.Y));
         }

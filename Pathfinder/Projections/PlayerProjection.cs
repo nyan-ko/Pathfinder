@@ -167,7 +167,7 @@ namespace Pathfinder.Projections {
                         int pX = x * 16;
                         int pY = y * 16;
 
-                        if (IsIntersectingWithTile(pX, pY)) { // dumb dumb never triggers
+                        if (WillBodyIntersectWithTile(pX, pY)) { 
                             var tile = Main.tile[x, y];  
 
                             if (position.Y + height <= pY) {
@@ -223,17 +223,21 @@ namespace Pathfinder.Projections {
             }
             bool velocityChanged = velocity != velocité;
             velocity = velocité;
-            position += velocity;
+            position.X += velocity.X;
+            position.Y -= velocity.Y;
             return velocityChanged;
         }
 
-        public bool IsIntersectingWithTile(int tilePixelX, int tilePixelY) {
+        public bool WillBodyIntersectWithTile(int tilePixelX, int tilePixelY) {
             int projectedX = (int)(position.X + velocity.X);
             int projectedY = (int)(position.Y + velocity.Y);
-            return projectedX < tilePixelX + 16 &&
-                projectedX + width > tilePixelX &&
-                projectedY < tilePixelY + 16 &&
-                projectedY + height > tilePixelY;
+            return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, width, height, tilePixelX, tilePixelY, 16, 16);
+        }
+
+        public bool WillTileOriginIntersectWithTile(int tilePixelX, int tilePixelY) {
+            int projectedX = (int)(position.X + velocity.X);
+            int projectedY = (int)(position.Y + velocity.Y);
+            return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, 16, 16, tilePixelX, tilePixelY, 16, 16);
         }
 
         public void AdjustRunFieldsForTurningAround(HorizontalDirection direction) => AdjustRunFieldsForTurningAround((int)direction);
@@ -249,7 +253,13 @@ namespace Pathfinder.Projections {
             lastDirection = (sbyte)direction; 
         }
 
-        #region Entity Position thing i cant think of a word rn
+        #region Entity Position things i cant think of a word rn
+        public PixelPosition TileOriginCenter {
+            get {
+                return new PixelPosition(position.X + 8, position.Y + 8);
+            }
+        }
+
         public PixelPosition Center {
             get {
                 return new PixelPosition(position.X + (width / 2), position.Y + (height / 2));

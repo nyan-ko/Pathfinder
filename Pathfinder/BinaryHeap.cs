@@ -38,7 +38,7 @@ namespace Pathfinder {
             Size--;
             result.HeapIndex = -1;
 
-            if (Size < 2) {
+            if (Size < 1) {
                 return result;
             }
 
@@ -51,7 +51,7 @@ namespace Pathfinder {
                 float childCost = child.Cost;
 
                 if (childIndex < Size) {
-                    T rightChild = nodes[++childIndex];
+                    T rightChild = nodes[childIndex++];
                     float rightChildCost = rightChild.Cost;
                     if (rightChildCost < childCost) {
                         childIndex++;
