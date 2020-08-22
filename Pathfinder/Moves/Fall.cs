@@ -26,27 +26,23 @@ namespace Pathfinder.Moves {
         }
 
         protected override void UpdateMovementTowardsGoal(ref PlayerProjection player, PixelPosition goal, out int frames) {
-            frames = -1;
+            frames = 0;
             int goalX = (int)goal.X;
             int goalY = (int)goal.Y;
             float previousDistance = float.MaxValue;
-            if (!player.WillTileOriginIntersectWithTile(goalX, goalY)) {
-                frames = 0;
-                do {
-                    player.UpdateFallMovement();
-                    float distance = player.TileOriginCenter.Distance(goalX + 7, goalY);
+            while (!player.IsIntersectingWithTile(goalX, goalY)) {
+                player.UpdateFallMovement();
+                float distance = player.Center.Distance(goalX + 7, goalY);
 
-                    if (distance < previousDistance) {
-                        previousDistance = distance;
-                    }
-                    else {
-                        //frames = IMPOSSIBLE_FRAME_COST;
-                        return;
-                    }
-
-                    frames++;
+                if (distance < previousDistance) {
+                    previousDistance = distance;
                 }
-                while (!player.WillTileOriginIntersectWithTile(goalX, goalY));
+                else {
+                    frames = IMPOSSIBLE_FRAME_COST;
+                    return;
+                }
+
+                frames++;
             }
         }
     }

@@ -49,10 +49,9 @@ namespace Pathfinder.Structs {
         }
 
         public PixelPosition ClampToClosestTile() {
-            var clampedPos = this;
-            clampedPos.X -= X % 16;
-            clampedPos.Y -= Y % 16;
-            return clampedPos;
+            X -= X % 16;
+            Y -= Y % 16;
+            return this;
         }
 
         public static bool operator != (PixelPosition o, PixelPosition c) {

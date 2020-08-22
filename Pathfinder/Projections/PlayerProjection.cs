@@ -73,13 +73,11 @@ namespace Pathfinder.Projections {
 
         public void UpdateTurnAroundMovement() {
             IncrementTurnAroundMovement();
-            IncrementFallMovement();
             UpdatePositionInWorld();
         }
 
         public void UpdateHorizontalMovement() {
             IncrementHorizontalMovement();
-            IncrementFallMovement();
             UpdatePositionInWorld();
         }
 
@@ -118,6 +116,7 @@ namespace Pathfinder.Projections {
         private void IncrementJumpMovement() {
             if (jump > 0) {
                 velocity.Y = -_stats.jumpSpeed;
+                jump--;
             }
             else {
                 IncrementFallMovement();
@@ -138,19 +137,10 @@ namespace Pathfinder.Projections {
                 velocity.X += runSlowdown;
             }
         }
-
-        private void DecrementJump() {
-            if (jump <= 0) {
-                //jump = 0;
-                return;
-            }
-            jump--;
-        }
         #endregion
 
         // clamps velocity to prevent collision with surrounding tiles
         private bool UpdatePositionInWorld() {
-            DecrementJump();
             // this method is taken from Collision.TileCollision()
             int lowerXBound = (int)(position.X / 16) - 1;
             int lowerYBound = (int)(position.Y / 16) - 1;
@@ -167,7 +157,7 @@ namespace Pathfinder.Projections {
                         int pX = x * 16;
                         int pY = y * 16;
 
-                        if (WillBodyIntersectWithTile(pX, pY)) { 
+                        if (IsIntersectingWithTile(pX, pY)) { // dumb dumb never triggers
                             var tile = Main.tile[x, y];  
 
                             if (position.Y + height <= pY) {
@@ -223,21 +213,17 @@ namespace Pathfinder.Projections {
             }
             bool velocityChanged = velocity != velocité;
             velocity = velocité;
-            position.X += velocity.X;
-            position.Y -= velocity.Y;
+            position += velocity;
             return velocityChanged;
         }
 
-        public bool WillBodyIntersectWithTile(int tilePixelX, int tilePixelY) {
+        public bool IsIntersectingWithTile(int tilePixelX, int tilePixelY) {
             int projectedX = (int)(position.X + velocity.X);
             int projectedY = (int)(position.Y + velocity.Y);
-            return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, width, height, tilePixelX, tilePixelY, 16, 16);
-        }
-
-        public bool WillTileOriginIntersectWithTile(int tilePixelX, int tilePixelY) {
-            int projectedX = (int)(position.X + velocity.X);
-            int projectedY = (int)(position.Y + velocity.Y);
-            return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, 16, 16, tilePixelX, tilePixelY, 16, 16);
+            return projectedX < tilePixelX + 16 &&
+                projectedX + width > tilePixelX &&
+                projectedY < tilePixelY + 16 &&
+                projectedY + height > tilePixelY;
         }
 
         public void AdjustRunFieldsForTurningAround(HorizontalDirection direction) => AdjustRunFieldsForTurningAround((int)direction);
@@ -253,13 +239,7 @@ namespace Pathfinder.Projections {
             lastDirection = (sbyte)direction; 
         }
 
-        #region Entity Position things i cant think of a word rn
-        public PixelPosition TileOriginCenter {
-            get {
-                return new PixelPosition(position.X + 8, position.Y + 8);
-            }
-        }
-
+        #region Entity Position thing i cant think of a word rn
         public PixelPosition Center {
             get {
                 return new PixelPosition(position.X + (width / 2), position.Y + (height / 2));
