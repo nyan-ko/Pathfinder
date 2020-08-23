@@ -24,9 +24,9 @@ namespace Pathfinder.Moves {
         public ActionCost CalculateCost(ref PlayerProjection player) {
             var goalLocation = player.position.ClampToClosestTile() + new PixelPosition(dX * 16, dY * -16);
 
-            bool standingStill = player.velocity == PixelPosition.Zero;
-            bool playerGoingWrongWay = !standingStill && (player.velocity.X < 0 && player.lastDirection == 1 ||
-                player.velocity.X > 0 && player.lastDirection == -1);
+            bool standingStill = player.velocity.X == 0;
+            bool playerGoingWrongWay = !standingStill && (player.velocity.X < 0 && RelativeNodeDirection == HorizontalDirection.Right ||
+                player.velocity.X > 0 && RelativeNodeDirection == HorizontalDirection.Left);
 
             if (!player.ValidPosition(new TilePosition(goalLocation), true, RelativeNodeDirection))
                 return IMPOSSIBLE_COST;
@@ -35,7 +35,9 @@ namespace Pathfinder.Moves {
 
             if (playerGoingWrongWay)
                 UpdateTurnAround(ref player, out turnFrames);
-
+            else if (standingStill)
+                player.Direction = (sbyte)RelativeNodeDirection;
+            
             UpdateMovementTowardsGoal(ref player, goalLocation, out int frames);
 
             return ActionCost.CreateActionCost(turnFrames, frames, Jump);

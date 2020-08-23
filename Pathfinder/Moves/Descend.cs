@@ -26,7 +26,7 @@ namespace Pathfinder.Moves {
 
         protected override void UpdateTurnAround(ref PlayerProjection player, out int frames) {
             frames = 0;
-            player.AdjustRunFieldsForTurningAround(RelativeNodeDirection);
+            player.AdjustVelocityForTurningAround(RelativeNodeDirection);
             while (player.velocity.X < 0) {
                 player.UpdateTurnAroundMovement();
                 frames++;
@@ -38,14 +38,14 @@ namespace Pathfinder.Moves {
             int goalX = (int)goal.X;
             int goalY = (int)goal.Y;
             float previousDistance = float.MaxValue;
-            while (!player.IsIntersectingWithTile(goalX, goalY)) {
+            while (!player.WillTileOriginIntersectWithTile(goalX, goalY)) {
                 player.UpdateMovingFallMovement();
-                float distance = player.Center.Distance(goalX + xTilePixelOffset, goalY);
+                float distance = player.position.Distance(goalX, goalY);
 
                 if (distance < previousDistance) {
                     previousDistance = distance;
                 }
-                else {
+                else if (!player.WillTileOriginIntersectWithTile(goalX, goalY)) {
                     frames = IMPOSSIBLE_FRAME_COST;
                     return;
                 }

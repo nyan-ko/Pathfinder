@@ -13,6 +13,10 @@ namespace Pathfinder.Input {
 
         private long frameCount = 0;
 
+        public PathfinderTriggersSet() {
+            SetupKeys();
+        }
+
         public void SetList(List<Trigger> triggers) {
             inputs = triggers;
             inputs.OrderBy(x => x.DelayFromStart);
@@ -31,6 +35,10 @@ namespace Pathfinder.Input {
                 activeInputs.Add(inputs[i]);
                 inputs.RemoveAt(i);
                 i++;
+
+                if (i >= inputs.Count) {
+                    break;
+                }
             }
 
             if (activeInputs.Count != 0) {

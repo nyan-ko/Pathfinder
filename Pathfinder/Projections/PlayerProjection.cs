@@ -18,17 +18,15 @@ namespace Pathfinder.Projections {
         public int height;
 
         public int jump;
-        public bool jumping;
+        private bool canJump;
         public float gravity;
-        public bool onGround;
         public float maxRunSpeed;
         public float runAcceleration;
         public float runSlowdown;
         public float accessoryRunSpeed;
 
-        public sbyte lastDirection;
+        public sbyte Direction;
         public PickaxeProjection[] pickaxes;
-        private Rectangle boundingBox;
         private PlayerStats _stats;
 
         public PlayerProjection(Player player) {
@@ -38,16 +36,14 @@ namespace Pathfinder.Projections {
             height = player.height;
 
             jump = 15;
-            jumping = false;
+            canJump = false;
             gravity = Player.defaultGravity;
-            onGround = true;
-            lastDirection = 1;
+            Direction = 1;
             maxRunSpeed = player.maxRunSpeed;
             runAcceleration = player.runAcceleration;
             runSlowdown = player.runSlowdown;
             accessoryRunSpeed = player.accRunSpeed;
 
-            boundingBox = new Rectangle((int)position.X, (int)position.Y, width - 1, height - 1);
             _stats = new PlayerStats(player);
             pickaxes = new PickaxeProjection[1];
             ScanInventory();
@@ -73,11 +69,13 @@ namespace Pathfinder.Projections {
 
         public void UpdateTurnAroundMovement() {
             IncrementTurnAroundMovement();
+            IncrementFallMovement();
             UpdatePositionInWorld();
         }
 
         public void UpdateHorizontalMovement() {
             IncrementHorizontalMovement();
+            IncrementFallMovement();
             UpdatePositionInWorld();
         }
 
@@ -105,18 +103,27 @@ namespace Pathfinder.Projections {
 
         #region Increments
         private void IncrementHorizontalMovement() {
-            if (velocity.X < maxRunSpeed) {
-                velocity.X += runAcceleration;
+            if (Direction >= 0) {
+                if (velocity.X < maxRunSpeed) {
+                    velocity.X += runAcceleration;
+                }
+                else if (velocity.X < accessoryRunSpeed && velocity.Y == 0) {
+                    velocity.X += runAcceleration * 0.2F;
+                }
             }
-            else if (velocity.X < accessoryRunSpeed && velocity.Y == 0) {
-                velocity.X += runAcceleration * 0.2F;
+            else if (Direction == -1) {
+                if (velocity.X > -maxRunSpeed) {
+                    velocity.X -= runAcceleration;
+                }
+                else if (velocity.X > -accessoryRunSpeed && velocity.Y == 0) {
+                    velocity.X -= runAcceleration * 0.2F;
+                }
             }
         }
 
         private void IncrementJumpMovement() {
-            if (jump > 0) {
+            if (jump > 0 && canJump) {
                 velocity.Y = -_stats.jumpSpeed;
-                jump--;
             }
             else {
                 IncrementFallMovement();
@@ -130,17 +137,33 @@ namespace Pathfinder.Projections {
             else if (velocity.Y > _stats.maxFallSpeed) {
                 velocity.Y = _stats.maxFallSpeed;
             }
+            canJump = false;
         }
 
         private void IncrementTurnAroundMovement() {
-            if (velocity.X < runSlowdown) {
-                velocity.X += runSlowdown;
+            if (Direction >= 0) {
+                if (velocity.X < runSlowdown) {
+                    velocity.X += runSlowdown;
+                }
             }
+            else {
+                if (velocity.X > -runSlowdown) {
+                    velocity.X -= runSlowdown;
+                }
+            }
+        }
+
+        private void DecrementJump() {
+            if (jump <= 0) {
+                return;
+            }
+            jump--;
         }
         #endregion
 
         // clamps velocity to prevent collision with surrounding tiles
         private bool UpdatePositionInWorld() {
+            DecrementJump();
             // this method is taken from Collision.TileCollision()
             int lowerXBound = (int)(position.X / 16) - 1;
             int lowerYBound = (int)(position.Y / 16) - 1;
@@ -151,20 +174,22 @@ namespace Pathfinder.Projections {
             int yIntersectionLastX = -1;
             int yIntersectionLastY = -1;
             PixelPosition velocité = velocity;
+            PixelPosition projectedPosition = position + velocity;
             for (int x = lowerXBound; x < upperXBound; ++x) {
                 for (int y = lowerYBound; y < upperYBound; ++y) {
                     if (PathfindingUtils.IsTileSolid(x, y)) {
                         int pX = x * 16;
                         int pY = y * 16;
 
-                        if (IsIntersectingWithTile(pX, pY)) { // dumb dumb never triggers
+                        if (PathfindingUtils.IsEntityIntersectingWithEntity(projectedPosition.X, projectedPosition.Y, width, height, pX, pY, 16, 16))  { // dumb dumb never triggers
                             var tile = Main.tile[x, y];  
 
                             if (position.Y + height <= pY) {
                                 yIntersectionLastX = x;
                                 yIntersectionLastY = y;
-                                jump = 15;
                                 if (yIntersectionLastX != xIntersectionLastX) {
+                                    jump = 15;
+                                    canJump = true;
                                     velocité.Y = pY - (position.Y + height);
                                 }
                             }
@@ -214,29 +239,35 @@ namespace Pathfinder.Projections {
             bool velocityChanged = velocity != velocité;
             velocity = velocité;
             position += velocity;
+            ////position.X += velocity.X;
+            ////position.Y -= velocity.Y;
+            //
             return velocityChanged;
         }
 
-        public bool IsIntersectingWithTile(int tilePixelX, int tilePixelY) {
-            int projectedX = (int)(position.X + velocity.X);
-            int projectedY = (int)(position.Y + velocity.Y);
-            return projectedX < tilePixelX + 16 &&
-                projectedX + width > tilePixelX &&
-                projectedY < tilePixelY + 16 &&
-                projectedY + height > tilePixelY;
+        public bool WillBodyIntersectWithTile(int tilePixelX, int tilePixelY) {
+            float projectedX = position.X + velocity.X;
+            float projectedY = position.Y + velocity.Y;
+            return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, width, height, tilePixelX, tilePixelY, 16, 16);
         }
 
-        public void AdjustRunFieldsForTurningAround(HorizontalDirection direction) => AdjustRunFieldsForTurningAround((int)direction);
+        public bool WillTileOriginIntersectWithTile(int tilePixelX, int tilePixelY) {
+            float projectedX = position.X + velocity.X;
+            float projectedY = position.Y + velocity.Y;
+            return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, 16, 16, tilePixelX, tilePixelY, 16, 16);
+        }
 
-        public void AdjustRunFieldsForTurningAround(int direction) {
-            int multiplier = direction * lastDirection;  
-            velocity.X *= multiplier;
-            runSlowdown *= multiplier;
-            runAcceleration *= multiplier;
-            maxRunSpeed *= multiplier;
-            accessoryRunSpeed *= multiplier;
+        public void AdjustVelocityForTurningAround(HorizontalDirection direction) => AdjustRunFieldsForTurningAround((int)direction);
 
-            lastDirection = (sbyte)direction; 
+        public void AdjustRunFieldsForTurningAround(int direction) {  // potentially obsolete
+            int multiplier = direction * Direction;  
+            //velocity.X *= multiplier;
+            //runSlowdown *= multiplier;
+            //runAcceleration *= multiplier;
+            //maxRunSpeed *= multiplier;
+            //accessoryRunSpeed *= multiplier;
+
+            Direction = (sbyte)direction; 
         }
 
         #region Entity Position thing i cant think of a word rn

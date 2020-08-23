@@ -46,5 +46,9 @@ namespace Pathfinder.Moves {
         public static bool operator == (ActionCost cost, ActionCost compare) {
             return cost.TotalCost == compare.TotalCost;
         }
+
+        public override string ToString() {
+            return TotalCost.ToString();
+        }
     }
 }

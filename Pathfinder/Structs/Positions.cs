@@ -36,8 +36,8 @@ namespace Pathfinder.Structs {
         }
 
         public PixelPosition(Vector2 pixelPosition) {
-            X = (int)pixelPosition.X;
-            Y = (int)pixelPosition.Y;
+            X = pixelPosition.X;
+            Y = pixelPosition.Y;
         }
 
         public float Distance(PixelPosition compare) => Distance(compare.X, compare.Y);
@@ -49,8 +49,9 @@ namespace Pathfinder.Structs {
         }
 
         public PixelPosition ClampToClosestTile() {
-            X -= X % 16;
-            Y -= Y % 16;
+            var clampedPosition = this;
+            clampedPosition.X -= X % 16;
+            clampedPosition.Y -= Y % 16;
             return this;
         }
 
@@ -63,11 +64,13 @@ namespace Pathfinder.Structs {
         }
 
         public static PixelPosition operator + (PixelPosition o, PixelPosition c) {
-            o.X += c.X;
-            o.Y += c.Y;
-            return o;
+            return new PixelPosition(o.X + c.X, o.Y + c.Y);
         }
 
         public static readonly PixelPosition Zero = new PixelPosition(0, 0);
+
+        public override string ToString() {
+            return $"X:{X} Y:{Y}";
+        }
     }
 }

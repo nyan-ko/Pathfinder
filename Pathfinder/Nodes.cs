@@ -94,6 +94,12 @@ namespace Nodes
         }
     }
 
+    public struct debug {
+        public int X;
+        public int Y;
+        public int Type;
+    }
+
     public class AStarPathfinder : IPathFinder {
         private const float MINIMUM_IMPROVEMENT = 0.1F;
         public static readonly IHeuristic Heuristic = new Manhattan();
@@ -105,6 +111,8 @@ namespace Nodes
         private Dictionary<long, JumpNodeCollection> nodeHashDictionary;
         private JumpNodeCollection startNode;
         private JumpNodeCollection endNode;
+
+        private List<debug> debugNodes = new List<debug>();
     
         public AStarPathfinder(int startX, int startY, int endX, int endY, Player startingProjection) {
             startNode = new JumpNodeCollection(startX, startY, endX, endY) { CostFromStart = 0 };
@@ -115,7 +123,7 @@ namespace Nodes
             openSet = new BinaryNodeHeap<JumpNodeCollection>();
         }
 
-        public IEnumerable<INode> DebugGetExploredNodes => nodeHashDictionary.Values;
+        public IEnumerable<debug> DebugGetExploredNodes => null;
 
         public INode Start => startNode;
 
@@ -165,7 +173,7 @@ namespace Nodes
             long hash = PathfindingUtils.GetNodeHash(endNode.X, endNode.Y);
             JumpNodeCollection currentNode = GetNode(-1, -1, hash);
 
-            while (currentNode.X != startNode.X && currentNode.Y != startNode.Y) {
+            while (currentNode.ParentX != startNode.X && currentNode.ParentY != startNode.Y) {
                 hash = PathfindingUtils.GetNodeHash(currentNode.ParentX, currentNode.ParentY);
                 JumpNodeCollection parentNode = GetNode(-1, -1, hash);
                 steps.Add(parentNode);
@@ -184,6 +192,12 @@ namespace Nodes
                     int currentY = parent.Y - movement.dY;
                     var movementProjection = parent.Nodes[i].ProjectionAtThisNode;
                     var nodeCost = movement.CalculateCost(ref movementProjection);
+
+                    int type = 0;
+                    if (nodeCost.TotalCost != float.MaxValue) {
+                        type = 1;
+                    }
+                    debugNodes.Add(new debug() { X = currentX, Y = currentY, Type = type });
 
                     if (nodeCost.TotalCost != float.MaxValue) {
                         long hash = PathfindingUtils.GetNodeHash(currentX, currentY);
