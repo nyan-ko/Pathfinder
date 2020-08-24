@@ -251,10 +251,14 @@ namespace Pathfinder.Projections {
             return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, width, height, tilePixelX, tilePixelY, 16, 16);
         }
 
-        public bool WillTileOriginIntersectWithTile(int tilePixelX, int tilePixelY) {
+        public bool WillTileOriginIntersectWithTile(float tilePixelX, float tilePixelY) {
             float projectedX = position.X + velocity.X;
             float projectedY = position.Y + velocity.Y;
             return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, 16, 16, tilePixelX, tilePixelY, 16, 16);
+        }
+
+        public bool IsTileOriginIntersectingWithTile(float tilePixelX, float tilePixelY) {
+            return PathfindingUtils.IsEntityIntersectingWithEntity(position.X, position.Y, 16, 16, tilePixelX, tilePixelY, 16, 16);
         }
 
         public void AdjustVelocityForTurningAround(HorizontalDirection direction) => AdjustRunFieldsForTurningAround((int)direction);

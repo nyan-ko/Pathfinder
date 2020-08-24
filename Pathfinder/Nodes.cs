@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using Terraria;
 using ReLogic;
 using Pathfinder;
@@ -11,6 +12,7 @@ using Pathfinder.Moves;
 using Pathfinder.Heuristics;
 using Pathfinder.Input;
 using Microsoft.Xna.Framework;
+using Terraria.GameContent;
 
 namespace Nodes
 {
@@ -112,8 +114,6 @@ namespace Nodes
         private JumpNodeCollection startNode;
         private JumpNodeCollection endNode;
 
-        private List<debug> debugNodes = new List<debug>();
-    
         public AStarPathfinder(int startX, int startY, int endX, int endY, Player startingProjection) {
             startNode = new JumpNodeCollection(startX, startY, endX, endY) { CostFromStart = 0 };
             startNode.Nodes.Add(new JumpNode(new PlayerProjection(startingProjection), 0));
@@ -123,7 +123,13 @@ namespace Nodes
             openSet = new BinaryNodeHeap<JumpNodeCollection>();
         }
 
-        public IEnumerable<debug> DebugGetExploredNodes => null;
+        public IEnumerable<JumpNodeCollection> debug2 { get 
+                {
+                lock (nodeHashDictionary) {
+                    return nodeHashDictionary?.Values;
+                }
+            }
+        }
 
         public INode Start => startNode;
 
@@ -133,6 +139,7 @@ namespace Nodes
             bool foundPath = false;
             openSet.Add(startNode);
             int count = 0;
+
 
             while (!foundPath) { 
                 JumpNodeCollection currentNode = openSet.TakeLowest();
@@ -144,6 +151,8 @@ namespace Nodes
 
                 SearchNeighbours(currentNode);
                 count++;
+                //DebugDraw();
+                //Thread.Sleep(1750);
 
                 if (count >= ExploreLimit) {
                     break;
@@ -192,12 +201,6 @@ namespace Nodes
                     int currentY = parent.Y - movement.dY;
                     var movementProjection = parent.Nodes[i].ProjectionAtThisNode;
                     var nodeCost = movement.CalculateCost(ref movementProjection);
-
-                    int type = 0;
-                    if (nodeCost.TotalCost != float.MaxValue) {
-                        type = 1;
-                    }
-                    debugNodes.Add(new debug() { X = currentX, Y = currentY, Type = type });
 
                     if (nodeCost.TotalCost != float.MaxValue) {
                         long hash = PathfindingUtils.GetNodeHash(currentX, currentY);
