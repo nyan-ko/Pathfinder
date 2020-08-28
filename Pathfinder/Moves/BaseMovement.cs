@@ -25,7 +25,7 @@ namespace Pathfinder.Moves {
             //var goalLocation = player.position + new PixelPosition(dX * 16, dY * -16);
             var goalLocation = new PixelPosition((previousX + dX) * 16, (previousY - dY) * 16);
             bool standingStill = player.velocity.X == 0;
-            bool playerGoingWrongWay = !standingStill && ((player.velocity.X < 0 && RelativeNodeDirection == HorizontalDirection.Right) ||
+            bool playerGoingWrongWay = !standingStill && ((RelativeNodeDirection == HorizontalDirection.None) || (player.velocity.X < 0 && RelativeNodeDirection == HorizontalDirection.Right) ||
                 (player.velocity.X > 0 && RelativeNodeDirection == HorizontalDirection.Left));
 
             if (!player.ValidPosition(new TilePosition(goalLocation), true, RelativeNodeDirection))
@@ -35,7 +35,7 @@ namespace Pathfinder.Moves {
 
             if (playerGoingWrongWay)
                 UpdateTurnAround(ref player, out turnFrames);
-            else if (standingStill)
+            else if (standingStill && RelativeNodeDirection != HorizontalDirection.None)
                 player.SetDirection(RelativeNodeDirection);
             
             UpdateMovementTowardsGoal(ref player, goalLocation, out int frames);

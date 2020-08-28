@@ -149,7 +149,7 @@ namespace Pathfinder.Projections {
         }
 
         private void IncrementTurnAroundMovement() {
-            if (Direction >= 0) {
+            if (Direction <= 0) {
                 if (velocity.X > 0) {
                     velocity.X -= runSlowdown;
                 }
@@ -289,14 +289,15 @@ namespace Pathfinder.Projections {
                 return 0;
             }
 
+            float multiplier = Math.Sign(pixelDeltaDistance);
             pixelDeltaDistance = Math.Abs(pixelDeltaDistance);
-            float velocity = -(this.velocity.X * Direction);
+            float velocity = (this.velocity.X * multiplier);
             float positionChange = 0;
             int frameCount = 0;
             const int LIMIT = 120;
 
             while (true) {
-                if (velocity <= maxRunSpeed) {
+                if (velocity < maxRunSpeed) {
                     velocity += runAcceleration;
                 }
 

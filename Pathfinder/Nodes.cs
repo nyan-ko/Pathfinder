@@ -59,7 +59,9 @@ namespace Nodes
             pY = parent.Y;
         }
 
-        protected virtual float CalculateHeuristicCostToGoal(int x, int y) => AStarPathfinder.Heuristic.EstimateCost(_x, _y, x, y);  //TODO change to a globally held heuristic function or pass as parameter
+        public override string ToString() {
+            return $"X:{_x} Y:{_y} Cost:{Cost}";
+        }
     }
 
     public class JumpNode : AbstractPathNode {
@@ -81,17 +83,17 @@ namespace Nodes
         }
 
         private float CalculateHeuristic(int x, int y) {
-            float horizontalCost = Projection.EstimateTimeToWalkDistance((X - x) * 16);
+            float horizontalCost = Projection.EstimateTimeToWalkDistance((x - X) * 16);
             float verticalCost = 0;
 
             if (y > Y) {
-                verticalCost = Projection.EstimateTimeToFallDistance((Y - y) * 16);
+                verticalCost = Projection.EstimateTimeToFallDistance((y - Y) * 16);
             }
             else {
-                verticalCost = Projection.EstimateTimeToJumpDistance((Y - y) * 16);
+                verticalCost = Projection.EstimateTimeToJumpDistance((y - Y) * 16);
             }
 
-            return horizontalCost + verticalCost;
+            return (float)Math.Sqrt(horizontalCost * horizontalCost + verticalCost * verticalCost);
         }
     }
 
@@ -193,7 +195,7 @@ namespace Nodes
                     SearchNeighbours(currentNode);
                     count++;
                     //DebugDraw();
-                    Thread.Sleep(100);
+                    Thread.Sleep(10);
 
                     if (count >= ExploreLimit) {
                         break;
@@ -225,7 +227,7 @@ namespace Nodes
         private List<JumpNode> RetraceSteps(JumpNode lastNode) {
             if (lastNode.X == startNode.X && lastNode.Y == startNode.Y) { return new List<JumpNode>(); }
 
-            List<JumpNode> steps = new List<JumpNode>();
+            List<JumpNode> steps = new List<JumpNode>();                        // TODO make this less weirdChamp
             long hash = PathfindingUtils.GetNodeHash(lastNode.X, lastNode.Y);  // gets the node that exists in the node dictionary since certain instances may not have a set parent (i.e. endNode and startNode)
             var currentNode = GetNode(hash, lastNode.Projection.jump);
 
