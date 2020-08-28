@@ -12,19 +12,15 @@ using Pathfinder.Structs;
 namespace Pathfinder.Moves {
     public class Walk : BaseMovement {
 
-        private int xTilePixelOffset;
-
         public Walk(int deltaX, HorizontalDirection direction) {
             dX = deltaX;
             RelativeNodeDirection = direction;
-
-            xTilePixelOffset = deltaX == 1 ? 0 : 15;
         }
 
         protected override void UpdateTurnAround(ref PlayerProjection player, out int frames) {
             frames = 0;
-            player.AdjustVelocityForTurningAround(RelativeNodeDirection);
-            while (player.velocity.X < 0) {
+            player.SetDirection(RelativeNodeDirection);
+            while (!player.IsGoingRightWay) {
                 player.UpdateTurnAroundMovement();
                 frames++;
             }
@@ -35,7 +31,7 @@ namespace Pathfinder.Moves {
             float previousDistance = float.MaxValue;
 
             while (!player.IsTileOriginIntersectingWithTile(goal.X, goal.Y)) {
-                player.UpdateHorizontalMovement();
+                player.UpdateMovingFallMovement();
                 float distance = player.position.Distance(goal.X, goal.Y);
 
                 if (distance < previousDistance) {

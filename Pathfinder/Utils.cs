@@ -9,7 +9,7 @@ using Microsoft.Xna.Framework;
 namespace Pathfinder {
     public static class PathfindingUtils {
         public static long GetNodeHash(int x, int y) {
-            long hash = 501134401;
+            long hash = 50113401;
             hash = 89577541 * hash + x;
             hash = 46587 * hash + y;
             return hash;

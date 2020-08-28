@@ -21,12 +21,12 @@ namespace Pathfinder.Moves {
         protected static readonly ActionCost IMPOSSIBLE_COST = ActionCost.ImpossibleCost;
         protected const int IMPOSSIBLE_FRAME_COST = -1;
 
-        public ActionCost CalculateCost(ref PlayerProjection player) {
-            var goalLocation = player.position.ClampToClosestTile() + new PixelPosition(dX * 16, dY * -16);
-
+        public ActionCost CalculateCost(int previousX, int previousY, ref PlayerProjection player) {
+            //var goalLocation = player.position + new PixelPosition(dX * 16, dY * -16);
+            var goalLocation = new PixelPosition((previousX + dX) * 16, (previousY - dY) * 16);
             bool standingStill = player.velocity.X == 0;
-            bool playerGoingWrongWay = !standingStill && (player.velocity.X < 0 && RelativeNodeDirection == HorizontalDirection.Right ||
-                player.velocity.X > 0 && RelativeNodeDirection == HorizontalDirection.Left);
+            bool playerGoingWrongWay = !standingStill && ((player.velocity.X < 0 && RelativeNodeDirection == HorizontalDirection.Right) ||
+                (player.velocity.X > 0 && RelativeNodeDirection == HorizontalDirection.Left));
 
             if (!player.ValidPosition(new TilePosition(goalLocation), true, RelativeNodeDirection))
                 return IMPOSSIBLE_COST;
@@ -36,7 +36,7 @@ namespace Pathfinder.Moves {
             if (playerGoingWrongWay)
                 UpdateTurnAround(ref player, out turnFrames);
             else if (standingStill)
-                player.Direction = (sbyte)RelativeNodeDirection;
+                player.SetDirection(RelativeNodeDirection);
             
             UpdateMovementTowardsGoal(ref player, goalLocation, out int frames);
 
@@ -47,7 +47,7 @@ namespace Pathfinder.Moves {
         protected abstract void UpdateMovementTowardsGoal(ref PlayerProjection player, PixelPosition goal, out int frames);
 
         public static BaseMovement[] GetAllMoves() {
-            BaseMovement[] movements = new BaseMovement[8];
+            BaseMovement[] movements = new BaseMovement[9];
 
             movements[0] = new Pillar(1);
             movements[1] = new Ascend(1, 1, HorizontalDirection.Right);
@@ -57,6 +57,7 @@ namespace Pathfinder.Moves {
             movements[5] = new Descend(-1, -1, HorizontalDirection.Left);
             movements[6] = new Walk(-1, HorizontalDirection.Left);
             movements[7] = new Ascend(-1, 1, HorizontalDirection.Left);
+            movements[8] = new Stay();
 
             return movements;
         }

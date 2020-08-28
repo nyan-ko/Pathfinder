@@ -59,6 +59,7 @@
     <Compile Include="Heuristics\Euclidean.cs" />
     <Compile Include="Heuristics\IHeuristic.cs" />
     <Compile Include="Heuristics\Manhattan.cs" />
+    <Compile Include="Heuristics\WIPHeuristic.cs" />
     <Compile Include="Input\PathfinderTriggersSet.cs" />
     <Compile Include="Input\Trigger.cs" />
     <Compile Include="Interfaces.cs" />
@@ -68,6 +69,7 @@
     <Compile Include="Moves\Descend.cs" />
     <Compile Include="Moves\Fall.cs" />
     <Compile Include="Moves\Pillar.cs" />
+    <Compile Include="Moves\Stay.cs" />
     <Compile Include="Moves\Walk.cs" />
     <Compile Include="Nodes.cs" />
     <Compile Include="PlayerStats.cs" />

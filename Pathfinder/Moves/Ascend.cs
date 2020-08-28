@@ -12,7 +12,6 @@ using Terraria;
 
 namespace Pathfinder.Moves {
     public class Ascend : BaseMovement {
-        private int xTilePixelOffset;
 
         public Ascend(int deltaX, int deltaY, HorizontalDirection direction) {
             dX = deltaX;
@@ -21,14 +20,12 @@ namespace Pathfinder.Moves {
             }
             dY = deltaY;
             RelativeNodeDirection = direction;
-
-            xTilePixelOffset = deltaX == 1 ? 0 : 15;
         }
 
         protected override void UpdateTurnAround(ref PlayerProjection player, out int frames) {
             frames = 0;
-            player.AdjustVelocityForTurningAround(RelativeNodeDirection);
-            while (player.velocity.X < 0) {
+            player.SetDirection(RelativeNodeDirection);
+            while (!player.IsGoingRightWay) {
                 player.UpdateTurnAroundMovement();
                 frames++;
             }

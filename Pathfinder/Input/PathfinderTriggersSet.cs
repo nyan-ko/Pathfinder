@@ -49,6 +49,10 @@ namespace Pathfinder.Input {
                         activeInputs.RemoveAt(k);
                         continue;
                     }
+                    if (trigger.Input == "") {
+                        trigger.Duration--;
+                        continue;
+                    }
 
                     var inputs = trigger.Input.Split(Trigger.INPUT_SEPARATOR);
 

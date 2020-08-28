@@ -36,7 +36,8 @@ namespace Pathfinder.Input {
             { 5, "Down" },
             { 6, "Down|Left" },
             { 7, "Left" },
-            { 8, "Jump|Left" }
+            { 8, "Jump|Left" },
+            { 9, "" }
         };
     }
 }

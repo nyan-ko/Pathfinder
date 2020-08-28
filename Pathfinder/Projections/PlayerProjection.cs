@@ -12,6 +12,8 @@ using Nodes;
 
 namespace Pathfinder.Projections {
     public struct PlayerProjection {  // trace on
+        public static readonly PlayerProjection Empty = new PlayerProjection();
+
         public PixelPosition position;
         public PixelPosition velocity;  // TODO make this private and just have it be a get
         public int width;
@@ -67,15 +69,21 @@ namespace Pathfinder.Projections {
             return true;
         }
 
-        public void UpdateTurnAroundMovement() {
-            IncrementTurnAroundMovement();
+        public bool IsGoingRightWay => velocity.X * Direction >= 0;
+
+        public void SetDirection(HorizontalDirection direction) => Direction = (sbyte)direction;
+
+        public void SetDirection(int direction) => Direction = (sbyte)direction;
+
+        public void UpdateTurnAroundMovement() {  // TODO condense these
             IncrementFallMovement();
+            IncrementTurnAroundMovement();
             UpdatePositionInWorld();
         }
 
-        public void UpdateHorizontalMovement() {
-            IncrementHorizontalMovement();
+        public void UpdateStopMovement() {
             IncrementFallMovement();
+            IncrementStopMovement();
             UpdatePositionInWorld();
         }
 
@@ -111,7 +119,7 @@ namespace Pathfinder.Projections {
                     velocity.X += runAcceleration * 0.2F;
                 }
             }
-            else if (Direction == -1) {
+            else {
                 if (velocity.X > -maxRunSpeed) {
                     velocity.X -= runAcceleration;
                 }
@@ -142,13 +150,32 @@ namespace Pathfinder.Projections {
 
         private void IncrementTurnAroundMovement() {
             if (Direction >= 0) {
-                if (velocity.X < runSlowdown) {
-                    velocity.X += runSlowdown;
+                if (velocity.X > 0) {
+                    velocity.X -= runSlowdown;
                 }
             }
             else {
-                if (velocity.X > -runSlowdown) {
+                if (velocity.X < 0) {
+                    velocity.X += runSlowdown;
+                }
+            }
+        }
+
+        private void IncrementStopMovement() {
+            if (Direction >= 0) {
+                if (velocity.X > 0) {
                     velocity.X -= runSlowdown;
+                }
+                else {
+                    velocity.X = 0;
+                }
+            }
+            else {
+                if (velocity.X < 0) {
+                    velocity.X += runSlowdown;
+                }
+                else {
+                    velocity.X = 0;
                 }
             }
         }
@@ -162,7 +189,7 @@ namespace Pathfinder.Projections {
         #endregion
 
         // clamps velocity to prevent collision with surrounding tiles
-        private bool UpdatePositionInWorld() {
+        private void UpdatePositionInWorld() {
             DecrementJump();
             // this method is taken from Collision.TileCollision()
             int lowerXBound = (int)(position.X / 16) - 1;
@@ -236,19 +263,14 @@ namespace Pathfinder.Projections {
                     }
                 }
             }
-            bool velocityChanged = velocity != velocité;
+            //bool velocityChanged = velocity != velocité;
             velocity = velocité;
             position += velocity;
-            ////position.X += velocity.X;
-            ////position.Y -= velocity.Y;
-            //
-            return velocityChanged;
+            //return velocityChanged;
         }
 
-        public bool WillBodyIntersectWithTile(int tilePixelX, int tilePixelY) {
-            float projectedX = position.X + velocity.X;
-            float projectedY = position.Y + velocity.Y;
-            return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, width, height, tilePixelX, tilePixelY, 16, 16);
+        public bool IsBodyIntersectingWithTile(int tileX, int tileY) {
+            return PathfindingUtils.IsEntityIntersectingWithEntity(position.X, position.Y, width, height, tileX * 16, tileY * 16, 16, 16);
         }
 
         public bool WillTileOriginIntersectWithTile(float tilePixelX, float tilePixelY) {
@@ -261,100 +283,91 @@ namespace Pathfinder.Projections {
             return PathfindingUtils.IsEntityIntersectingWithEntity(position.X, position.Y, 16, 16, tilePixelX, tilePixelY, 16, 16);
         }
 
-        public void AdjustVelocityForTurningAround(HorizontalDirection direction) => AdjustRunFieldsForTurningAround((int)direction);
 
-        public void AdjustRunFieldsForTurningAround(int direction) {  // potentially obsolete
-            int multiplier = direction * Direction;  
-            //velocity.X *= multiplier;
-            //runSlowdown *= multiplier;
-            //runAcceleration *= multiplier;
-            //maxRunSpeed *= multiplier;
-            //accessoryRunSpeed *= multiplier;
+        public float EstimateTimeToWalkDistance(float pixelDeltaDistance) {
+            if (pixelDeltaDistance == 0) {
+                return 0;
+            }
 
-            Direction = (sbyte)direction; 
-        }
+            pixelDeltaDistance = Math.Abs(pixelDeltaDistance);
+            float velocity = -(this.velocity.X * Direction);
+            float positionChange = 0;
+            int frameCount = 0;
+            const int LIMIT = 120;
 
-        #region Entity Position thing i cant think of a word rn
-        public PixelPosition Center {
-            get {
-                return new PixelPosition(position.X + (width / 2), position.Y + (height / 2));
-            }
-            set {
-                position = new PixelPosition(value.X - (width / 2), value.Y - (height / 2));
-            }
-        }
+            while (true) {
+                if (velocity <= maxRunSpeed) {
+                    velocity += runAcceleration;
+                }
 
-        public PixelPosition Left {
-            get {
-                return new PixelPosition(position.X, position.Y + (height / 2));
-            }
-            set {
-                position = new PixelPosition(value.X, value.Y - (height / 2));
-            }
-        }
+                positionChange += velocity;
 
-        public PixelPosition Right {
-            get {
-                return new PixelPosition(position.X + width, position.Y + (height / 2));
-            }
-            set {
-                position = new PixelPosition(value.X - width, value.Y - (height / 2));
+                if (positionChange >= pixelDeltaDistance) {
+                    return frameCount + (positionChange / pixelDeltaDistance) - 1;
+                }
+
+                frameCount++;
+
+                if (frameCount > LIMIT) {
+                    return float.MaxValue;
+                }
             }
         }
 
-        public PixelPosition Top {
-            get {
-                return new PixelPosition(position.X + (width / 2), position.Y);
+        public float EstimateTimeToFallDistance(float pixelDeltaDistance) {
+            if (pixelDeltaDistance == 0) {
+                return 0;
             }
-            set {
-                position = new PixelPosition(value.X - (width / 2), value.Y);
+
+            pixelDeltaDistance = Math.Abs(pixelDeltaDistance);
+            float velocity = this.velocity.Y;
+            float positionChange = 0;
+            int frameCount = 0;
+            const int LIMIT = 120;
+
+            while (true) {
+                if (velocity <= _stats.maxFallSpeed) {
+                    velocity += gravity;
+                }
+
+                positionChange += velocity;
+
+                if (positionChange >= pixelDeltaDistance) {
+                    return frameCount + (positionChange / pixelDeltaDistance) - 1;
+                }
+
+                frameCount++;
+
+                if (frameCount > LIMIT) {
+                    return float.MaxValue;
+                }
             }
         }
 
-        public PixelPosition TopLeft {
-            get {
-                return position;
+        public float EstimateTimeToJumpDistance(float pixelDeltaDistance) {
+            if (pixelDeltaDistance == 0) {
+                return 0;
             }
-            set {
-                position = value;
-            }
-        }
 
-        public PixelPosition TopRight {
-            get {
-                return new PixelPosition(position.X + width, position.Y);
-            }
-            set {
-                position = new PixelPosition(value.X - width, value.Y);
-            }
-        }
+            pixelDeltaDistance = Math.Abs(pixelDeltaDistance);
+            float velocity = _stats.jumpSpeed;
+            float positionChange = 0;
+            int frameCount = 0;
+            const int LIMIT = 120;
 
-        public PixelPosition Bottom {
-            get {
-                return new PixelPosition(position.X + (width / 2), position.Y + height);
-            }
-            set {
-                position = new PixelPosition(value.X - (width / 2), value.Y - height);
-            }
-        }
+            while (true) {
+                positionChange += velocity;
 
-        public PixelPosition BottomLeft {
-            get {
-                return new PixelPosition(position.X, position.Y + height);
-            }
-            set {
-                position = new PixelPosition(value.X, value.Y - height);
-            }
-        }
+                if (positionChange >= pixelDeltaDistance) {
+                    return frameCount + (positionChange / pixelDeltaDistance) - 1;
+                }
 
-        public PixelPosition BottomRight {
-            get {
-                return new PixelPosition(position.X + width, position.Y + height);
-            }
-            set {
-                position = new PixelPosition(value.X - width, value.Y - height);
+                frameCount++;
+
+                if (frameCount > LIMIT) {
+                    return float.MaxValue;
+                }
             }
         }
-        #endregion
     }
 }
