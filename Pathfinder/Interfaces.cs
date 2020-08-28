@@ -1,20 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Nodes;
 using Pathfinder.Input;
-using Nodes;
 
-namespace Pathfinder {
-    public interface IPathFinder {
+namespace Pathfinder
+{
+    public interface IPathFinder
+    {
         INode Start { get; }
         INode End { get; }
 
         IPath FindPath();
     }
 
-    public interface IPath {
+    public interface IPath
+    {
         bool Complete { get; }
 
         PathfinderTriggersSet Path { get; }

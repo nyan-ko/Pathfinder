@@ -1,62 +1,72 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Terraria.GameInput;
 
-namespace Pathfinder.Input {
-    public class PathfinderTriggersSet : TriggersSet {
+namespace Pathfinder.Input
+{
+    public class PathfinderTriggersSet : TriggersSet
+    {
         private List<Trigger> inputs;
         private List<Trigger> activeInputs = new List<Trigger>();
         private List<string> oldInputs = new List<string>();
 
         private long frameCount = 0;
 
-        public PathfinderTriggersSet() {
+        public PathfinderTriggersSet()
+        {
             SetupKeys();
         }
 
-        public void SetList(List<Trigger> triggers) {
+        public void SetList(List<Trigger> triggers)
+        {
             inputs = triggers;
             inputs.OrderBy(x => x.DelayFromStart);
         }
 
-        private void UpdateInternalInputs() {
-            if (oldInputs.Count != 0) {
-                foreach (var input in oldInputs) {
+        private void UpdateInternalInputs()
+        {
+            if (oldInputs.Count != 0)
+            {
+                foreach (var input in oldInputs)
+                {
                     KeyStatus[input] = false;
                 }
                 oldInputs.Clear();
             }
 
             int i = 0;
-            while (inputs[i].DelayFromStart <= frameCount) {
+            while (inputs[i].DelayFromStart <= frameCount)
+            {
                 activeInputs.Add(inputs[i]);
                 inputs.RemoveAt(i);
                 i++;
 
-                if (i >= inputs.Count) {
+                if (i >= inputs.Count)
+                {
                     break;
                 }
             }
 
-            if (activeInputs.Count != 0) {
-                for (int k = 0; k < activeInputs.Count; k++) {
+            if (activeInputs.Count != 0)
+            {
+                for (int k = 0; k < activeInputs.Count; k++)
+                {
                     Trigger trigger = activeInputs[k];
 
-                    if (trigger.Duration <= 0) {
+                    if (trigger.Duration <= 0)
+                    {
                         activeInputs.RemoveAt(k);
                         continue;
                     }
-                    if (trigger.Input == "") {
+                    if (trigger.Input == "")
+                    {
                         trigger.Duration--;
                         continue;
                     }
 
                     var inputs = trigger.Input.Split(Trigger.INPUT_SEPARATOR);
 
-                    for (int m = 0; m < inputs.Length; m++) {
+                    for (int m = 0; m < inputs.Length; m++)
+                    {
                         string actualInput = inputs[m];
                         KeyStatus[actualInput] = true;
                         oldInputs.Add(actualInput);
@@ -68,8 +78,10 @@ namespace Pathfinder.Input {
             frameCount++;
         }
 
-        public void Update() {
-            if (inputs?.Count > 0) {
+        public void Update()
+        {
+            if (inputs?.Count > 0)
+            {
                 UpdateInternalInputs();
             }
         }

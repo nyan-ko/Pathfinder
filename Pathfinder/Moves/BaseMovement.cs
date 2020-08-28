@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Pathfinder.Projections;
-using Terraria;
+﻿using Pathfinder.Projections;
 using Pathfinder.Structs;
-using Microsoft.Xna.Framework;
-using Nodes;
 
-namespace Pathfinder.Moves {
-    public abstract class BaseMovement {
+namespace Pathfinder.Moves
+{
+    public abstract class BaseMovement
+    {
         public int dX { get; protected set; }
         public int dY { get; protected set; }
         protected bool Jump;
@@ -21,7 +15,8 @@ namespace Pathfinder.Moves {
         protected static readonly ActionCost IMPOSSIBLE_COST = ActionCost.ImpossibleCost;
         protected const int IMPOSSIBLE_FRAME_COST = -1;
 
-        public ActionCost CalculateCost(int previousX, int previousY, ref PlayerProjection player) {
+        public ActionCost CalculateCost(int previousX, int previousY, ref PlayerProjection player)
+        {
             //var goalLocation = player.position + new PixelPosition(dX * 16, dY * -16);
             var goalLocation = new PixelPosition((previousX + dX) * 16, (previousY - dY) * 16);
             bool standingStill = player.velocity.X == 0;
@@ -37,16 +32,18 @@ namespace Pathfinder.Moves {
                 UpdateTurnAround(ref player, out turnFrames);
             else if (standingStill)
                 player.SetDirection(RelativeNodeDirection);
-            
+
             UpdateMovementTowardsGoal(ref player, goalLocation, out int frames);
 
             return ActionCost.CreateActionCost(turnFrames, frames, Jump);
         }
 
         protected abstract void UpdateTurnAround(ref PlayerProjection player, out int frames);
+
         protected abstract void UpdateMovementTowardsGoal(ref PlayerProjection player, PixelPosition goal, out int frames);
 
-        public static BaseMovement[] GetAllMoves() {
+        public static BaseMovement[] GetAllMoves()
+        {
             BaseMovement[] movements = new BaseMovement[9];
 
             movements[0] = new Pillar(1);
@@ -63,7 +60,8 @@ namespace Pathfinder.Moves {
         }
     }
 
-    public enum HorizontalDirection : sbyte {
+    public enum HorizontalDirection : sbyte
+    {
         Left = -1, None, Right = 1
     }
 }

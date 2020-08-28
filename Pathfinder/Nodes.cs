@@ -1,34 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
-using Terraria;
-using ReLogic;
-using Pathfinder;
-using Pathfinder.Projections;
-using Pathfinder.Moves;
+﻿using Pathfinder;
 using Pathfinder.Heuristics;
 using Pathfinder.Input;
-using Pathfinder.Structs;
-using Microsoft.Xna.Framework;
-using Terraria.GameContent;
+using Pathfinder.Moves;
+using Pathfinder.Projections;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace Nodes
 {
-
-    public enum NodeStatus : byte {
+    public enum NodeStatus : byte
+    {
         Open,
         Closed
     }
 
-    public interface INode {
+    public interface INode
+    {
         int X { get; }
         int Y { get; }
     }
 
-    public abstract class AbstractPathNode : INode {
+    public abstract class AbstractPathNode : INode
+    {
         private int _x;
         private int _y;
         private int pX;
@@ -44,7 +39,8 @@ namespace Nodes
         public int ParentX => pX;
         public int ParentY => pY;
 
-        protected AbstractPathNode(int x, int y, int goalX, int goalY) {
+        protected AbstractPathNode(int x, int y, int goalX, int goalY)
+        {
             _x = x;
             _y = y;
             ActionCost = ActionCost.ImpossibleCost;
@@ -54,7 +50,8 @@ namespace Nodes
             HeapIndex = -1;
         }
 
-        public void SetParent(INode parent) {
+        public void SetParent(INode parent)
+        {
             pX = parent.X;
             pY = parent.Y;
         }
@@ -62,32 +59,38 @@ namespace Nodes
         protected virtual float CalculateHeuristicCostToGoal(int x, int y) => AStarPathfinder.Heuristic.EstimateCost(_x, _y, x, y);  //TODO change to a globally held heuristic function or pass as parameter
     }
 
-    public class JumpNode : AbstractPathNode {
+    public class JumpNode : AbstractPathNode
+    {
         public PlayerProjection Projection;
         public int ParentJump;
         public int Input;
         private JumpNodeCollection _collection;
 
-        public JumpNode(int x, int y, int goalX, int goalY, PlayerProjection projection, int input) : base(x, y, goalX, goalY) {
+        public JumpNode(int x, int y, int goalX, int goalY, PlayerProjection projection, int input) : base(x, y, goalX, goalY)
+        {
             Projection = projection;
             Input = input;
 
             HeuristicCostToGoal = CalculateHeuristic(goalX, goalY);
         }
 
-        public void LinkToCollection(JumpNodeCollection collection) {
+        public void LinkToCollection(JumpNodeCollection collection)
+        {
             _collection = collection;
             collection.AddNode(this);
         }
 
-        private float CalculateHeuristic(int x, int y) {
+        private float CalculateHeuristic(int x, int y)
+        {
             float horizontalCost = Projection.EstimateTimeToWalkDistance((X - x) * 16);
             float verticalCost = 0;
 
-            if (y > Y) {
+            if (y > Y)
+            {
                 verticalCost = Projection.EstimateTimeToFallDistance((Y - y) * 16);
             }
-            else {
+            else
+            {
                 verticalCost = Projection.EstimateTimeToJumpDistance((Y - y) * 16);
             }
 
@@ -95,7 +98,8 @@ namespace Nodes
         }
     }
 
-    public class JumpNodeCollection {
+    public class JumpNodeCollection
+    {
         public Dictionary<int, JumpNode> Nodes;  // TODO private these and a bunch of other unnecessarily public fields
         public byte ParentJumpNodeIndex;
         public byte JumpNodeIndex;
@@ -103,24 +107,30 @@ namespace Nodes
         public int X;
         public int Y;
 
-        public JumpNodeCollection(int x, int y) {
+        public JumpNodeCollection(int x, int y)
+        {
             Nodes = new Dictionary<int, JumpNode>(8);  // arbitrary initial capacity, yet to find out if this is a good initial capacity
 
             X = x;
             Y = y;
         }
 
-        public void AddNode(JumpNode node) {
+        public void AddNode(JumpNode node)
+        {
             Nodes.Add(node.Projection.jump, node);
         }
 
-        public bool ContainsProjection(PlayerProjection projection) {
-            if (Nodes.Count == 0) {
+        public bool ContainsProjection(PlayerProjection projection)
+        {
+            if (Nodes.Count == 0)
+            {
                 return false;
             }
 
-            foreach (var node in Nodes.Values) {
-                if (node.Projection.jump == projection.jump) {
+            foreach (var node in Nodes.Values)
+            {
+                if (node.Projection.jump == projection.jump)
+                {
                     return true;
                 }
             }
@@ -128,19 +138,24 @@ namespace Nodes
             return false;
         }
 
-        public JumpNode this[int jump] {
-            get {
-                if (Nodes.ContainsKey(jump)) {
+        public JumpNode this[int jump]
+        {
+            get
+            {
+                if (Nodes.ContainsKey(jump))
+                {
                     return Nodes[jump];
                 }
-                else {
+                else
+                {
                     throw new InvalidOperationException();
                 }
             }
         }
     }
 
-    public class AStarPathfinder : IPathFinder {
+    public class AStarPathfinder : IPathFinder
+    {
         private const float MINIMUM_IMPROVEMENT = 0.1F;
         public static readonly IHeuristic Heuristic = new Manhattan();
 
@@ -153,7 +168,8 @@ namespace Nodes
         private JumpNode startNode;
         private JumpNode endNode;
 
-        public AStarPathfinder(int startX, int startY, int endX, int endY, Player startingProjection) {
+        public AStarPathfinder(int startX, int startY, int endX, int endY, Player startingProjection)
+        {
             startNode = new JumpNode(startX, startY, endX, endY, new PlayerProjection(startingProjection), byte.MaxValue) { CostFromStart = 0 };
             endNode = new JumpNode(endX, endY, endX, endY, PlayerProjection.Empty, byte.MaxValue) { CostFromStart = -1 };
             availableMoves = BaseMovement.GetAllMoves();
@@ -162,9 +178,12 @@ namespace Nodes
             openSet = new BinaryNodeHeap<JumpNode>();
         }
 
-        public IEnumerable<JumpNodeCollection> debug2 { get 
+        public IEnumerable<JumpNodeCollection> debug2
+        {
+            get
+            {
+                lock (nodeHashDictionary)
                 {
-                lock (nodeHashDictionary) {
                     return nodeHashDictionary?.Values;
                 }
             }
@@ -174,18 +193,22 @@ namespace Nodes
 
         public INode End => endNode;
 
-        public IPath FindPath() {
+        public IPath FindPath()
+        {
             bool foundPath = false;
             openSet.Add(startNode);
             int count = 0;
             JumpNode currentNode = startNode;
 
-            try {
-                while (!foundPath) {
+            try
+            {
+                while (!foundPath)
+                {
                     currentNode = openSet.TakeLowest();
 
                     bool reachedEnd = currentNode.Projection.IsBodyIntersectingWithTile(endNode.X, endNode.Y);
-                    if (reachedEnd) {
+                    if (reachedEnd)
+                    {
                         foundPath = true;
                         break;
                     }
@@ -195,21 +218,25 @@ namespace Nodes
                     //DebugDraw();
                     Thread.Sleep(100);
 
-                    if (count >= ExploreLimit) {
+                    if (count >= ExploreLimit)
+                    {
                         break;
                     }
                 }
             }
-            catch {
+            catch
+            {
                 //return null;
             }
 
-            if (foundPath) {
+            if (foundPath)
+            {
                 PathfinderTriggersSet triggersSet = new PathfinderTriggersSet();
                 List<Trigger> triggers = new List<Trigger>();
 
                 var retracedSteps = RetraceSteps(currentNode);
-                foreach (var step in retracedSteps.Skip(1)) {
+                foreach (var step in retracedSteps.Skip(1))
+                {
                     if (step.Input < 256 && step.Input > 0)
                         triggers.Add(new Trigger((byte)step.Input, step.ActionCost.TotalCost, step.CostFromStart - step.ActionCost.TotalCost));
                 }
@@ -222,14 +249,16 @@ namespace Nodes
             return null; // idk what to do yet for this
         }
 
-        private List<JumpNode> RetraceSteps(JumpNode lastNode) {
+        private List<JumpNode> RetraceSteps(JumpNode lastNode)
+        {
             if (lastNode.X == startNode.X && lastNode.Y == startNode.Y) { return new List<JumpNode>(); }
 
             List<JumpNode> steps = new List<JumpNode>();
             long hash = PathfindingUtils.GetNodeHash(lastNode.X, lastNode.Y);  // gets the node that exists in the node dictionary since certain instances may not have a set parent (i.e. endNode and startNode)
             var currentNode = GetNode(hash, lastNode.Projection.jump);
 
-            while (currentNode.X != startNode.X || currentNode.Y != startNode.Y) {
+            while (currentNode.X != startNode.X || currentNode.Y != startNode.Y)
+            {
                 hash = PathfindingUtils.GetNodeHash(currentNode.ParentX, currentNode.ParentY);
                 var parentNode = GetNode(hash, currentNode.ParentJump);
                 steps.Add(parentNode);
@@ -239,17 +268,20 @@ namespace Nodes
             return steps;
         }
 
-        private void SearchNeighbours(JumpNode parent) {
+        private void SearchNeighbours(JumpNode parent)
+        {
             //for (byte i = 0; i < parent.Nodes.Count; i++) {
             byte input = 1;
 
-            foreach (BaseMovement movement in availableMoves) {
+            foreach (BaseMovement movement in availableMoves)
+            {
                 int currentX = parent.X + movement.dX;
                 int currentY = parent.Y - movement.dY;
                 var movementProjection = parent.Projection;
                 var nodeCost = movement.CalculateCost(parent.X, parent.Y, ref movementProjection);
 
-                if (nodeCost.TotalCost != float.MaxValue) {
+                if (nodeCost.TotalCost != float.MaxValue)
+                {
                     long hash = PathfindingUtils.GetNodeHash(currentX, currentY);
                     var neighbouringNode = GetNode(currentX, currentY, hash, movementProjection, input);
 
@@ -261,16 +293,19 @@ namespace Nodes
                     float costToGetHere = parent.CostFromStart + nodeCost.TotalCost;
                     float newNeighbourCost = costToGetHere + neighbouringNode.HeuristicCostToGoal;
 
-                    if (neighbouringNode.Cost - newNeighbourCost > MINIMUM_IMPROVEMENT) {
+                    if (neighbouringNode.Cost - newNeighbourCost > MINIMUM_IMPROVEMENT)
+                    {
                         neighbouringNode.ActionCost = nodeCost;
                         neighbouringNode.CostFromStart = costToGetHere;
                         neighbouringNode.SetParent(parent);
                         neighbouringNode.ParentJump = parent.Projection.jump;
                         //neighbouringNode.ParentJumpNodeIndex = parent.JumpNodeIndex;
-                        if (neighbouringNode.HeapIndex == -1) {
+                        if (neighbouringNode.HeapIndex == -1)
+                        {
                             openSet.Add(neighbouringNode);
                         }
-                        else {
+                        else
+                        {
                             openSet.Update(neighbouringNode);
                         }
                     }
@@ -281,12 +316,15 @@ namespace Nodes
             //}
         }
 
-        private JumpNode GetNode(long hash, int jump) {
+        private JumpNode GetNode(long hash, int jump)
+        {
             return nodeHashDictionary[hash][jump];
         }
 
-        private JumpNode GetNode(int x, int y, long hash, PlayerProjection z, int input) {
-            if (nodeHashDictionary.ContainsKey(hash)) {
+        private JumpNode GetNode(int x, int y, long hash, PlayerProjection z, int input)
+        {
+            if (nodeHashDictionary.ContainsKey(hash))
+            {
                 var collection = nodeHashDictionary[hash];
                 if (collection.ContainsProjection(z))
                     return collection[z.jump];
@@ -294,7 +332,8 @@ namespace Nodes
                 node.LinkToCollection(collection);
                 return node;
             }
-            else {
+            else
+            {
                 if (x == -1 && y == -1)
                     throw new Exception();
                 JumpNodeCollection nodeCollection = new JumpNodeCollection(x, y);
@@ -305,5 +344,4 @@ namespace Nodes
             }
         }
     }
-
 }
