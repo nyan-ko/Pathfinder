@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Terraria;
 
 namespace Nodes
 {
@@ -24,25 +25,21 @@ namespace Nodes
 
     public abstract class AbstractPathNode : INode
     {
-        private int _x;
-        private int _y;
-        private int pX;
-        private int pY;
         public ActionCost ActionCost;
         public float CostFromStart;
         public float HeuristicCostToGoal;
         public short HeapIndex;
 
         public float Cost => CostFromStart != -1 ? CostFromStart + HeuristicCostToGoal : float.MaxValue;
-        public int X => _x;
-        public int Y => _y;
-        public int ParentX => pX;
-        public int ParentY => pY;
+        public int X { get; }
+        public int Y { get; }
+        public int ParentX { get; private set; }
+        public int ParentY { get; private set; }
 
         protected AbstractPathNode(int x, int y, int goalX, int goalY)
         {
-            _x = x;
-            _y = y;
+            X = x;
+            Y = y;
             ActionCost = ActionCost.ImpossibleCost;
 
             CostFromStart = -1;
@@ -52,11 +49,11 @@ namespace Nodes
 
         public void SetParent(INode parent)
         {
-            pX = parent.X;
-            pY = parent.Y;
+            ParentX = parent.X;
+            ParentY = parent.Y;
         }
 
-        protected virtual float CalculateHeuristicCostToGoal(int x, int y) => AStarPathfinder.Heuristic.EstimateCost(_x, _y, x, y);  //TODO change to a globally held heuristic function or pass as parameter
+        protected virtual float CalculateHeuristicCostToGoal(int x, int y) => AStarPathfinder.Heuristic.EstimateCost(X, Y, x, y);  //TODO change to a globally held heuristic function or pass as parameter
     }
 
     public class JumpNode : AbstractPathNode

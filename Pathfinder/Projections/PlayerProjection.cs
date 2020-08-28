@@ -1,6 +1,7 @@
 ﻿using Pathfinder.Moves;
 using Pathfinder.Structs;
 using System;
+using Terraria;
 
 namespace Pathfinder.Projections
 {

@@ -5,6 +5,8 @@ namespace Pathfinder.Projections
     [Flags]
     public enum CollisionType : byte
     {
-        None, Horizontal, Vertical
+        None = 0,
+        Horizontal = 2,
+        Vertical = 4
     }
 }

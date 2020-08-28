@@ -1,4 +1,6 @@
-﻿namespace Pathfinder
+﻿using Terraria;
+
+namespace Pathfinder
 {
     public class PlayerStats
     {
