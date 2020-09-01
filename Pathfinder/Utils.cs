@@ -15,15 +15,18 @@ namespace Pathfinder {
             return hash;
         }
 
+        // ripped from Terraria.Utils.FloatIntersect but without >= and <= stuff
         public static bool IsEntityIntersectingWithEntity(float x, float y, float w, float h, float x2, float y2, float w2, float h2) {
             return x < x2 + w2 &&
                 x + w > x2 &&
                 y < y2 + h2 &&
                 y + h > y2;
-        }
+        } 
 
-        public static Vector2 AbsoluteDifference(this Vector2 origin, Vector2 compare) {
-            return new Vector2(Math.Abs(origin.X - compare.X), Math.Abs(origin.Y - compare.Y));
+        public static bool IsPositionInCorrectRelativePosition(float baseX, float baseY, float compareX, float compareY, int xDirection, int yDirection) {
+            var xSign = Math.Sign(compareX - baseX) * xDirection;
+            var ySign = Math.Sign(compareY - baseY) * yDirection;
+            return xSign >= 0 && ySign >= 0;
         }
 
         //// probably won't use reckless absolutes

@@ -15,33 +15,14 @@ namespace Pathfinder.Moves {
             dY = deltaY;
         }
 
-        protected override void UpdateTurnAround(ref PlayerProjection player, out int frames) {
-            frames = 0;
-            player.SetDirection(-player.Direction);
-            while (!player.IsGoingRightWay) {
-                player.UpdateTurnAroundMovement();
-                frames++;
-            }
+        protected override bool IsPlayerInCorrectRelativePosition(PlayerProjection player, PixelPosition basePosition) {
+            basePosition.Y += 15;
+            return player.IsInCorrectRelativePosition(basePosition, 0, -1);
         }
 
-        protected override void UpdateMovementTowardsGoal(ref PlayerProjection player, PixelPosition goal, out int frames) {
-            frames = 0;
-            float previousDistance = float.MaxValue;
-
-            while (!player.IsTileOriginIntersectingWithTile(goal.X, goal.Y)) {
-                player.UpdateJumpMovement();
-                float distance = player.position.Distance(goal.X, goal.Y);
-
-                if (distance < previousDistance) {
-                    previousDistance = distance;
-                }
-                else if (!player.WillTileOriginIntersectWithTile(goal.X, goal.Y)) {
-                    frames = IMPOSSIBLE_FRAME_COST;
-                    return;
-                }
-
-                frames++;
-            }
+        protected override PlayerProjection ApplyMovement(PlayerProjection player) {
+            player.UpdateJumpMovement();
+            return player;
         }
     }
 }

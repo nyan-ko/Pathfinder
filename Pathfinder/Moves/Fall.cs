@@ -12,37 +12,16 @@ namespace Pathfinder.Moves {
     public class Fall : BaseMovement {
 
         public Fall(int deltaY) {
-            dX = 0;
             dY = deltaY;
         }
 
-        protected override void UpdateTurnAround(ref PlayerProjection player, out int frames) {
-            frames = 0;
-            player.SetDirection(-player.Direction);
-            while (!player.IsGoingRightWay) {
-                player.UpdateTurnAroundMovement();
-                frames++;
-            }
+        protected override bool IsPlayerInCorrectRelativePosition(PlayerProjection player, PixelPosition basePosition) {
+            return player.IsInCorrectRelativePosition(basePosition, 0, 1);
         }
 
-        protected override void UpdateMovementTowardsGoal(ref PlayerProjection player, PixelPosition goal, out int frames) {
-            frames = 0;
-            float previousDistance = float.MaxValue;
-
-            while (!player.IsTileOriginIntersectingWithTile(goal.X, goal.Y)) {
-                player.UpdateFallMovement();
-                float distance = player.position.Distance(goal.X, goal.Y);
-
-                if (distance < previousDistance) {
-                    previousDistance = distance;
-                }
-                else if (!player.WillTileOriginIntersectWithTile(goal.X, goal.Y)) {
-                    frames = IMPOSSIBLE_FRAME_COST;
-                    return;
-                }
-
-                frames++;
-            }
+        protected override PlayerProjection ApplyMovement(PlayerProjection player) {
+            player.UpdateFallMovement();
+            return player;
         }
     }
 }

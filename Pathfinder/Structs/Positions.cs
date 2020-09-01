@@ -52,7 +52,7 @@ namespace Pathfinder.Structs {
             var clampedPosition = this;
             clampedPosition.X -= X % 16;
             clampedPosition.Y -= Y % 16;
-            return this;
+            return clampedPosition;
         }
 
         public static bool operator != (PixelPosition o, PixelPosition c) {

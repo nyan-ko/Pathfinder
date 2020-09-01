@@ -182,7 +182,7 @@ namespace Nodes
             int count = 0;
             JumpNode currentNode = startNode;
 
-            try {
+            //try {
                 while (!foundPath) {
                     currentNode = openSet.TakeLowest();
 
@@ -201,10 +201,10 @@ namespace Nodes
                         break;
                     }
                 }
-            }
-            catch {
-                //return null;
-            }
+            //}
+            //catch {
+            //    //return null;
+            //}
 
             if (foundPath) {
                 PathfinderTriggersSet triggersSet = new PathfinderTriggersSet();
@@ -246,10 +246,10 @@ namespace Nodes
             byte input = 1;
 
             foreach (BaseMovement movement in availableMoves) {
-                int currentX = parent.X + movement.dX;
-                int currentY = parent.Y - movement.dY;
                 var movementProjection = parent.Projection;
                 var nodeCost = movement.CalculateCost(parent.X, parent.Y, ref movementProjection);
+                int currentX = parent.X + movement.dX;
+                int currentY = parent.Y + movement.dY;
 
                 if (nodeCost.TotalCost != float.MaxValue) {
                     long hash = PathfindingUtils.GetNodeHash(currentX, currentY);

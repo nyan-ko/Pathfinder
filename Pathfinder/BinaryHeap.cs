@@ -34,8 +34,8 @@ namespace Pathfinder {
             T movedNode = nodes[Size - 1];
 
             UpdateNode(movedNode, 0);
-            nodes[Size] = null;
             Size--;
+            nodes[Size] = null;
             result.HeapIndex = -1;
 
             if (Size < 2) {
@@ -50,8 +50,8 @@ namespace Pathfinder {
                 T child = nodes[childIndex];
                 float childCost = child.Cost;
 
-                if (childIndex < Size) {
-                    T rightChild = nodes[++childIndex];
+                if (childIndex < Size - 1) {
+                    T rightChild = nodes[childIndex + 1];
                     float rightChildCost = rightChild.Cost;
                     if (rightChildCost < childCost) {
                         childIndex++;
@@ -60,7 +60,7 @@ namespace Pathfinder {
                     }
                 }
 
-                if (childCost <= movedNodeCost) {
+                if (childCost >= movedNodeCost) {
                     break;
                 }
 
@@ -68,7 +68,7 @@ namespace Pathfinder {
                 UpdateNode(child, index);
                 index = childIndex;
             }
-            while ((childIndex <<= 1) <= Size);
+            while ((childIndex = FindChildIndex(childIndex)) < Size);
 
             return result;
         }
@@ -82,18 +82,28 @@ namespace Pathfinder {
 
         private void MaintainHeapStructure(T node) {
             int index = node.HeapIndex;
-            int parentIndex = (int)((uint)index >> 1);
+            int parentIndex = FindParentIndex(index);
             T parentNode = nodes[parentIndex];
             float cost = node.Cost;
             while (index > 0 && parentNode.Cost > cost) {
-
                 UpdateNode(parentNode, index);
                 UpdateNode(node, parentIndex);
 
                 index = parentIndex;
-                parentIndex = (int)((uint)index >> 1);
+                parentIndex = FindParentIndex(index);
                 parentNode = nodes[parentIndex];
             }
+        }
+
+        private int FindChildIndex(int parent) {
+            return (parent << 1) + 1;
+        }
+
+        private int FindParentIndex(int child) {
+            if (child == 0) {
+                return 0;
+            }
+            return (child - 1) >> 1;
         }
 
         public bool Empty => Size == 0;

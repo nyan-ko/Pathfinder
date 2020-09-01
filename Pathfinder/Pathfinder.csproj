@@ -69,7 +69,6 @@
     <Compile Include="Moves\Descend.cs" />
     <Compile Include="Moves\Fall.cs" />
     <Compile Include="Moves\Pillar.cs" />
-    <Compile Include="Moves\Stay.cs" />
     <Compile Include="Moves\Walk.cs" />
     <Compile Include="Nodes.cs" />
     <Compile Include="PlayerStats.cs" />

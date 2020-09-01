@@ -7,6 +7,6 @@ using System.Threading.Tasks;
 namespace Pathfinder.Projections {
     [Flags]
     public enum CollisionType : byte {
-        None, Horizontal, Vertical
+        Up = 1, Down = 2, Left = 4, Right = 8
     }
 }

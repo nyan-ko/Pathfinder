@@ -28,6 +28,8 @@ namespace Pathfinder.Projections {
         public float accessoryRunSpeed;
 
         public sbyte Direction;
+        public CollisionType CollisionType;
+
         public PickaxeProjection[] pickaxes;
         private PlayerStats _stats;
 
@@ -47,15 +49,17 @@ namespace Pathfinder.Projections {
             accessoryRunSpeed = player.accRunSpeed;
 
             _stats = new PlayerStats(player);
+            CollisionType = 0;
             pickaxes = new PickaxeProjection[1];
             ScanInventory();
         }
 
-        private void ScanInventory() {
+        private void ScanInventory() { // TODO
             
         }
 
-        public bool ValidPosition(TilePosition tilePosition, bool canBeInAir, HorizontalDirection playerDirectionRelativeToBlock) {
+        // currently unused
+        public bool ValidPosition(TilePosition tilePosition, HorizontalDirection playerDirectionRelativeToBlock) {
             int offset = (int)playerDirectionRelativeToBlock == -1 ? -1 : 1;
 
             for (int x = tilePosition.X - offset; x != tilePosition.X; x += offset) {
@@ -69,21 +73,25 @@ namespace Pathfinder.Projections {
             return true;
         }
 
+        public bool ShouldUseMidairTurn => velocity.Y < 0; 
+
         public bool IsGoingRightWay => velocity.X * Direction >= 0;
 
         public void SetDirection(HorizontalDirection direction) => Direction = (sbyte)direction;
 
         public void SetDirection(int direction) => Direction = (sbyte)direction;
 
-        public void UpdateTurnAroundMovement() {  // TODO condense these
-            IncrementFallMovement();
+        #region Updates
+
+        public void UpdateMidairTurnAroundMovement() {
+            IncrementJumpMovement();
             IncrementTurnAroundMovement();
             UpdatePositionInWorld();
         }
 
-        public void UpdateStopMovement() {
+        public void UpdateFallingTurnAroundMovement() { 
             IncrementFallMovement();
-            IncrementStopMovement();
+            IncrementTurnAroundMovement();
             UpdatePositionInWorld();
         }
 
@@ -103,11 +111,99 @@ namespace Pathfinder.Projections {
             UpdatePositionInWorld();
         }
 
-        public void UpdateMovingJumpMovement() {
+        public void UpdateMovingJumpMovement() { 
             IncrementJumpMovement();
             IncrementHorizontalMovement();
             UpdatePositionInWorld();
         }
+
+        // clamps velocity to prevent collision with surrounding tiles
+        private void UpdatePositionInWorld() {
+            DecrementJump();
+            CollisionType = 0;
+            // this method is taken from Collision.TileCollision()
+            int lowerXBound = (int)(position.X / 16) - 1;
+            int lowerYBound = (int)(position.Y / 16) - 1;
+            int upperXBound = (int)((position.X + width) / 16) + 2;
+            int upperYBound = (int)((position.Y + height) / 16) + 2;
+            int xIntersectionLastX = -1;
+            int xIntersectionLastY = -1;
+            int yIntersectionLastX = -1;
+            int yIntersectionLastY = -1;
+            PixelPosition velocité = velocity;
+            PixelPosition projectedPosition = position + velocity;
+            for (int x = lowerXBound; x < upperXBound; ++x) {
+                for (int y = lowerYBound; y < upperYBound; ++y) {
+                    if (PathfindingUtils.IsTileSolid(x, y)) {
+                        int pX = x * 16;
+                        int pY = y * 16;
+
+                        if (PathfindingUtils.IsEntityIntersectingWithEntity(projectedPosition.X, projectedPosition.Y, width, height, pX, pY, 16, 16)) { // dumb dumb never triggers
+                            var tile = Main.tile[x, y];
+
+                            if (position.Y + height <= pY) {
+                                yIntersectionLastX = x;
+                                yIntersectionLastY = y;
+                                if (yIntersectionLastX != xIntersectionLastX) {
+                                    jump = 15;
+                                    canJump = true;
+                                    CollisionType |= CollisionType.Down;
+                                    velocité.Y = pY - (position.Y + height);
+                                }
+                            }
+                            else if (position.X + width <= pX && !Main.tileSolidTop[tile.type]) {
+                                if (x >= 1 && Main.tile[x - 1, y] == null) {
+                                    Main.tile[x - 1, y] = new Tile();
+                                }
+                                if (x < 1 || (Main.tile[x - 1, y].slope() != 2 && Main.tile[x - 1, y].slope() != 4)) {
+                                    xIntersectionLastX = x;
+                                    xIntersectionLastY = y;
+                                    if (xIntersectionLastY != yIntersectionLastY) {
+                                        CollisionType |= CollisionType.Right;
+                                        velocité.X = pX - (position.X + width);
+                                    }
+                                    if (yIntersectionLastX == xIntersectionLastX) {
+                                        velocité.Y = velocity.Y;
+                                    }
+                                }
+                            }
+                            else if (position.X >= pX + 16 && !Main.tileSolidTop[tile.type]) {
+                                if (Main.tile[x + 1, y] == null) {
+                                    Main.tile[x + 1, y] = new Tile();
+                                }
+                                if (Main.tile[x + 1, y].slope() != 1 && Main.tile[x + 1, y].slope() != 3) {
+                                    xIntersectionLastX = x;
+                                    xIntersectionLastY = y;
+                                    if (xIntersectionLastY != yIntersectionLastY) {
+                                        CollisionType |= CollisionType.Left;
+                                        velocité.X = pX + 16f - position.X;
+                                    }
+                                    if (yIntersectionLastX == xIntersectionLastX) {
+                                        velocité.Y = velocity.Y;
+                                    }
+                                }
+                            }
+                            else if (position.Y >= pY + 16 && !Main.tileSolidTop[tile.type]) {
+                                yIntersectionLastX = x;
+                                yIntersectionLastY = y;
+                                jump = 0;
+                                CollisionType |= CollisionType.Up;
+                                velocité.Y = pY + (16 - position.Y);
+                                if (yIntersectionLastY == xIntersectionLastY) {
+                                    velocité.X = velocity.X;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            //bool velocityChanged = velocity != velocité;
+            velocity = velocité;
+            position += velocity;
+            //return velocityChanged;
+        }
+
+        #endregion
 
         #region Increments
         private void IncrementHorizontalMovement() {
@@ -151,31 +247,12 @@ namespace Pathfinder.Projections {
         private void IncrementTurnAroundMovement() {
             if (Direction <= 0) {
                 if (velocity.X > 0) {
-                    velocity.X -= runSlowdown;
+                    velocity.X -= runSlowdown + runAcceleration;
                 }
             }
             else {
                 if (velocity.X < 0) {
-                    velocity.X += runSlowdown;
-                }
-            }
-        }
-
-        private void IncrementStopMovement() {
-            if (Direction >= 0) {
-                if (velocity.X > 0) {
-                    velocity.X -= runSlowdown;
-                }
-                else {
-                    velocity.X = 0;
-                }
-            }
-            else {
-                if (velocity.X < 0) {
-                    velocity.X += runSlowdown;
-                }
-                else {
-                    velocity.X = 0;
+                    velocity.X += runSlowdown + runAcceleration;
                 }
             }
         }
@@ -188,102 +265,7 @@ namespace Pathfinder.Projections {
         }
         #endregion
 
-        // clamps velocity to prevent collision with surrounding tiles
-        private void UpdatePositionInWorld() {
-            DecrementJump();
-            // this method is taken from Collision.TileCollision()
-            int lowerXBound = (int)(position.X / 16) - 1;
-            int lowerYBound = (int)(position.Y / 16) - 1;
-            int upperXBound = (int)((position.X + width) / 16) + 2;
-            int upperYBound = (int)((position.Y + height) / 16) + 2;
-            int xIntersectionLastX = -1;
-            int xIntersectionLastY = -1;
-            int yIntersectionLastX = -1;
-            int yIntersectionLastY = -1;
-            PixelPosition velocité = velocity;
-            PixelPosition projectedPosition = position + velocity;
-            for (int x = lowerXBound; x < upperXBound; ++x) {
-                for (int y = lowerYBound; y < upperYBound; ++y) {
-                    if (PathfindingUtils.IsTileSolid(x, y)) {
-                        int pX = x * 16;
-                        int pY = y * 16;
-
-                        if (PathfindingUtils.IsEntityIntersectingWithEntity(projectedPosition.X, projectedPosition.Y, width, height, pX, pY, 16, 16))  { // dumb dumb never triggers
-                            var tile = Main.tile[x, y];  
-
-                            if (position.Y + height <= pY) {
-                                yIntersectionLastX = x;
-                                yIntersectionLastY = y;
-                                if (yIntersectionLastX != xIntersectionLastX) {
-                                    jump = 15;
-                                    canJump = true;
-                                    velocité.Y = pY - (position.Y + height);
-                                }
-                            }
-                            else if (position.X + width <= pX && !Main.tileSolidTop[tile.type]) {
-                                if (x >= 1 && Main.tile[x - 1, y] == null) {
-                                    Main.tile[x - 1, y] = new Tile();
-                                }
-                                if (x < 1 || (Main.tile[x - 1, y].slope() != 2 && Main.tile[x - 1, y].slope() != 4)) {
-                                    xIntersectionLastX = x;
-                                    xIntersectionLastY = y;
-                                    if (xIntersectionLastY != yIntersectionLastY) {
-                                        velocité.X = pX - (position.X + width);
-                                    }
-                                    if (yIntersectionLastX == xIntersectionLastX) {
-                                        velocité.Y = velocity.Y;
-                                    }
-                                }
-                            }
-                            else if (position.X >= pX + 16 && !Main.tileSolidTop[tile.type]) {
-                                if (Main.tile[x + 1, y] == null) {
-                                    Main.tile[x + 1, y] = new Tile();
-                                }
-                                if (Main.tile[x + 1, y].slope() != 1 && Main.tile[x + 1, y].slope() != 3) {
-                                    xIntersectionLastX = x;
-                                    xIntersectionLastY = y;
-                                    if (xIntersectionLastY != yIntersectionLastY) {
-                                        velocité.X = pX + 16f - position.X;
-                                    }
-                                    if (yIntersectionLastX == xIntersectionLastX) {
-                                        velocité.Y = velocity.Y;
-                                    }
-                                }
-                            }
-                            else if (position.Y >= pY + 16 && !Main.tileSolidTop[tile.type]) {
-                                yIntersectionLastX = x;
-                                yIntersectionLastY = y;
-                                velocité.Y = pY + (16 - position.Y);
-                                jump = 0;
-                                if (yIntersectionLastY == xIntersectionLastY) {
-                                    velocité.X = velocity.X;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            //bool velocityChanged = velocity != velocité;
-            velocity = velocité;
-            position += velocity;
-            //return velocityChanged;
-        }
-
-        public bool IsBodyIntersectingWithTile(int tileX, int tileY) {
-            return PathfindingUtils.IsEntityIntersectingWithEntity(position.X, position.Y, width, height, tileX * 16, tileY * 16, 16, 16);
-        }
-
-        public bool WillTileOriginIntersectWithTile(float tilePixelX, float tilePixelY) {
-            float projectedX = position.X + velocity.X;
-            float projectedY = position.Y + velocity.Y;
-            return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, 16, 16, tilePixelX, tilePixelY, 16, 16);
-        }
-
-        public bool IsTileOriginIntersectingWithTile(float tilePixelX, float tilePixelY) {
-            return PathfindingUtils.IsEntityIntersectingWithEntity(position.X, position.Y, 16, 16, tilePixelX, tilePixelY, 16, 16);
-        }
-
-
+        #region Estimates
         public float EstimateTimeToWalkDistance(float pixelDeltaDistance) {
             if (pixelDeltaDistance == 0) {
                 return 0;
@@ -291,10 +273,10 @@ namespace Pathfinder.Projections {
 
             float multiplier = Math.Sign(pixelDeltaDistance);
             pixelDeltaDistance = Math.Abs(pixelDeltaDistance);
-            float velocity = (this.velocity.X * multiplier);
+            float velocity = this.velocity.X * multiplier;
             float positionChange = 0;
             int frameCount = 0;
-            const int LIMIT = 120;
+            const int LIMIT = 60 * 60;
 
             while (true) {
                 if (velocity < maxRunSpeed) {
@@ -324,10 +306,10 @@ namespace Pathfinder.Projections {
             float velocity = this.velocity.Y;
             float positionChange = 0;
             int frameCount = 0;
-            const int LIMIT = 120;
+            const int LIMIT = 60 * 60;
 
             while (true) {
-                if (velocity <= _stats.maxFallSpeed) {
+                if (velocity < _stats.maxFallSpeed) {
                     velocity += gravity;
                 }
 
@@ -354,7 +336,7 @@ namespace Pathfinder.Projections {
             float velocity = _stats.jumpSpeed;
             float positionChange = 0;
             int frameCount = 0;
-            const int LIMIT = 120;
+            const int LIMIT = 60 * 60;
 
             while (true) {
                 positionChange += velocity;
@@ -369,6 +351,29 @@ namespace Pathfinder.Projections {
                     return float.MaxValue;
                 }
             }
+        }
+        #endregion
+
+        public bool IsBodyIntersectingWithTile(int tileX, int tileY) {
+            return PathfindingUtils.IsEntityIntersectingWithEntity(position.X, position.Y, width, height, tileX * 16, tileY * 16, 16, 16);
+        }
+
+        public bool WillTileOriginIntersectWithTile(float tilePixelX, float tilePixelY) {
+            float projectedX = position.X + velocity.X;
+            float projectedY = position.Y + velocity.Y;
+            return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, 16, 16, tilePixelX, tilePixelY, 16, 16);
+        }
+
+        public bool IsTileOriginIntersectingWithTile(float tilePixelX, float tilePixelY) {
+            return PathfindingUtils.IsEntityIntersectingWithEntity(position.X, position.Y, 16, 16, tilePixelX, tilePixelY, 16, 16);
+        }
+
+        public bool IsOriginIntersectingWithTile(float tilePixelX, float tilePixelY) {
+            return PathfindingUtils.IsEntityIntersectingWithEntity(position.X, position.Y, 0, 0, tilePixelX, tilePixelY, 16, 16);
+        }
+
+        public bool IsInCorrectRelativePosition(PixelPosition comparePosition, int xDirection, int yDirection) {
+            return PathfindingUtils.IsPositionInCorrectRelativePosition(comparePosition.X, comparePosition.Y, position.X, position.Y, xDirection, yDirection);
         }
     }
 }

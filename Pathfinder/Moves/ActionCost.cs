@@ -9,21 +9,19 @@ namespace Pathfinder.Moves {
         public float TotalCost;
         public float TurnAroundCost;
         public float MovementTowardsGoalCost;
-        public bool Jumping;
 
-        public static ActionCost CreateActionCost(float turnAroundCost, float movementCost, bool needJump) {
+        public static ActionCost CreateActionCost(float turnAroundCost, float movementCost) {
             if (movementCost != -1) {
-                return new ActionCost(turnAroundCost, movementCost, needJump);
+                return new ActionCost(turnAroundCost, movementCost);
             }
             else {
                 return ImpossibleCost;
             }
         }
 
-        private ActionCost(float turnAroundCost, float movementCost, bool needJump) {
+        private ActionCost(float turnAroundCost, float movementCost) {
             TurnAroundCost = turnAroundCost;
             MovementTowardsGoalCost = movementCost;
-            Jumping = needJump;
             TotalCost = turnAroundCost + movementCost;
         }
 
