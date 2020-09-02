@@ -18,8 +18,10 @@ namespace Pathfinder.Input {
         }
 
         public void SetList(List<Trigger> triggers) {
-            inputs = triggers;
-            inputs.OrderBy(x => x.DelayFromStart);
+            var inputList = from input in triggers
+                     orderby input.DelayFromStart
+                     select input;
+            inputs = inputList.ToList();
         }
 
         private void UpdateInternalInputs() {

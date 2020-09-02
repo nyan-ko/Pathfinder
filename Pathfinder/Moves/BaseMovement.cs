@@ -19,8 +19,9 @@ namespace Pathfinder.Moves {
         protected const float ACCEPTABLE_RANGE_SQUARED = ACCEPTABLE_RANGE * ACCEPTABLE_RANGE;
         protected static readonly ActionCost IMPOSSIBLE_COST = ActionCost.ImpossibleCost;
         protected const int IMPOSSIBLE_FRAME_COST = -1;
+        protected const int FULL_BLOCK_PIXEL_OFFSET_FROM_CORNER = 15;
 
-        public ActionCost CalculateCost(int previousX, int previousY, ref PlayerProjection player) {
+        public ActionCost SimulateMovement(int previousX, int previousY, ref PlayerProjection player) {
             //var goalLocation = player.position + new PixelPosition(dX * 16, dY * -16);
             var goalLocation = new PixelPosition(previousX * 16, previousY * 16);
             bool standingStill = player.velocity.X == 0;

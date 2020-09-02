@@ -22,7 +22,7 @@ namespace Pathfinder.Moves {
         }
 
         protected override bool IsPlayerInCorrectRelativePosition(PlayerProjection player, PixelPosition basePosition) {
-            basePosition.X += RelativeNodeDirection == HorizontalDirection.Right ? 0 : 15;
+            basePosition.X += RelativeNodeDirection == HorizontalDirection.Right ? 0 : FULL_BLOCK_PIXEL_OFFSET_FROM_CORNER;
             return player.IsInCorrectRelativePosition(basePosition, (int)RelativeNodeDirection, 1);
         }
 

@@ -211,11 +211,11 @@ namespace Nodes
                 List<Trigger> triggers = new List<Trigger>();
 
                 var retracedSteps = RetraceSteps(currentNode);
-                foreach (var step in retracedSteps.Skip(1)) {
+                foreach (var step in retracedSteps) {
                     if (step.Input < 256 && step.Input > 0)
                         triggers.Add(new Trigger((byte)step.Input, step.ActionCost.TotalCost, step.CostFromStart - step.ActionCost.TotalCost));
                 }
-                triggers.Reverse();
+                //triggers.Reverse();
                 triggersSet.SetList(triggers);
 
                 return new AStarPath(true, triggersSet);
@@ -232,10 +232,9 @@ namespace Nodes
             var currentNode = GetNode(hash, lastNode.Projection.jump);
 
             while (currentNode.X != startNode.X || currentNode.Y != startNode.Y) {
+                steps.Add(currentNode);
                 hash = PathfindingUtils.GetNodeHash(currentNode.ParentX, currentNode.ParentY);
-                var parentNode = GetNode(hash, currentNode.ParentJump);
-                steps.Add(parentNode);
-                currentNode = parentNode;
+                currentNode = GetNode(hash, currentNode.ParentJump);
             }
 
             return steps;
@@ -247,7 +246,7 @@ namespace Nodes
 
             foreach (BaseMovement movement in availableMoves) {
                 var movementProjection = parent.Projection;
-                var nodeCost = movement.CalculateCost(parent.X, parent.Y, ref movementProjection);
+                var nodeCost = movement.SimulateMovement(parent.X, parent.Y, ref movementProjection);
                 int currentX = parent.X + movement.dX;
                 int currentY = parent.Y + movement.dY;
 
