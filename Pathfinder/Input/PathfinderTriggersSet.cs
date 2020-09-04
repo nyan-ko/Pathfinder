@@ -7,9 +7,10 @@ using Terraria.GameInput;
 
 namespace Pathfinder.Input {
     public class PathfinderTriggersSet : TriggersSet {
-        private List<Trigger> inputs;
+        private List<Trigger> inputs = new List<Trigger>();
         private List<Trigger> activeInputs = new List<Trigger>();
         private List<string> oldInputs = new List<string>();
+        private bool ordered = false;
 
         private long frameCount = 0;
 
@@ -17,11 +18,35 @@ namespace Pathfinder.Input {
             SetupKeys();
         }
 
-        public void SetList(List<Trigger> triggers) {
-            var inputList = from input in triggers
-                     orderby input.DelayFromStart
-                     select input;
-            inputs = inputList.ToList();
+        public void AddTrigger(byte input, float duration, float delay) => AddTrigger(new Trigger(input, duration, delay));
+
+        public void AddTrigger(Trigger trigger) {
+            //if (inputs.Count != 0) {
+            //    int lastIndex = inputs.Count - 1;
+            //    var lastTrigger = inputs[lastIndex];
+
+            //    if (lastTrigger.Input == trigger.Input) {
+            //        lastTrigger.Duration += trigger.DelayFromStart + trigger.Duration;
+            //        inputs.RemoveAt(lastIndex);
+            //        inputs.Add(lastTrigger);
+            //        return;
+            //    }
+            //}
+
+            inputs.Add(trigger);
+        }
+
+        public void SortInputList() {
+            if (ordered)
+                return;
+
+            lock (inputs) {
+                var inputList = from input in inputs
+                                orderby input.DelayFromStart
+                                select input;
+                inputs = inputList.ToList();
+                ordered = true;
+            }
         }
 
         private void UpdateInternalInputs() {
@@ -32,37 +57,26 @@ namespace Pathfinder.Input {
                 oldInputs.Clear();
             }
 
-            int i = 0;
-            while (inputs[i].DelayFromStart <= frameCount) {
-                activeInputs.Add(inputs[i]);
-                inputs.RemoveAt(i);
-                i++;
-
-                if (i >= inputs.Count) {
-                    break;
-                }
+            while (inputs.Count > 0 && inputs[0].DelayFromStart <= frameCount) {
+                activeInputs.Add(inputs[0]);
+                inputs.RemoveAt(0);
             }
+
 
             if (activeInputs.Count != 0) {
                 for (int k = 0; k < activeInputs.Count; k++) {
                     Trigger trigger = activeInputs[k];
-
-                    if (trigger.Duration <= 0) {
-                        activeInputs.RemoveAt(k);
-                        continue;
-                    }
-                    if (trigger.Input == "") {
-                        trigger.Duration--;
-                        continue;
-                    }
-
                     var inputs = trigger.Input.Split(Trigger.INPUT_SEPARATOR);
 
                     for (int m = 0; m < inputs.Length; m++) {
                         string actualInput = inputs[m];
                         KeyStatus[actualInput] = true;
                         oldInputs.Add(actualInput);
-                        trigger.Duration--;
+                    }
+
+                    if (trigger.Duration - (frameCount - trigger.DelayFromStart) <= 0) {
+                        activeInputs.RemoveAt(k);
+                        continue;
                     }
                 }
             }
@@ -71,7 +85,11 @@ namespace Pathfinder.Input {
         }
 
         public void Update() {
-            if (inputs?.Count > 0) {
+            if (inputs.Count > 0) {
+                if (!ordered) {
+                    SortInputList();
+                }
+
                 UpdateInternalInputs();
             }
         }

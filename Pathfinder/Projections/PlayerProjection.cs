@@ -214,6 +214,9 @@ namespace Pathfinder.Projections {
                 else if (velocity.X < accessoryRunSpeed && velocity.Y == 0) {
                     velocity.X += runAcceleration * 0.2F;
                 }
+                else if (velocity.Y == 0 && velocity.X > runSlowdown) {
+                    velocity.X -= runSlowdown;
+                }
             }
             else {
                 if (velocity.X > -maxRunSpeed) {
@@ -221,6 +224,9 @@ namespace Pathfinder.Projections {
                 }
                 else if (velocity.X > -accessoryRunSpeed && velocity.Y == 0) {
                     velocity.X -= runAcceleration * 0.2F;
+                }
+                else if (velocity.Y == 0 && velocity.X < -runSlowdown) {
+                    velocity.X += runSlowdown;
                 }
             }
         }
@@ -279,6 +285,8 @@ namespace Pathfinder.Projections {
             const int LIMIT = 60 * 60;
 
             while (true) {
+                frameCount++;
+
                 if (velocity < maxRunSpeed) {
                     velocity += runAcceleration;
                 }
@@ -286,12 +294,9 @@ namespace Pathfinder.Projections {
                 positionChange += velocity;
 
                 if (positionChange >= pixelDeltaDistance) {
-                    return frameCount + (positionChange / pixelDeltaDistance) - 1;
+                    return frameCount + 1 - (positionChange / pixelDeltaDistance);
                 }
-
-                frameCount++;
-
-                if (frameCount > LIMIT) {
+                else if (frameCount > LIMIT) {
                     return float.MaxValue;
                 }
             }
@@ -309,6 +314,8 @@ namespace Pathfinder.Projections {
             const int LIMIT = 60 * 60;
 
             while (true) {
+                frameCount++;
+
                 if (velocity < _stats.maxFallSpeed) {
                     velocity += gravity;
                 }
@@ -316,12 +323,9 @@ namespace Pathfinder.Projections {
                 positionChange += velocity;
 
                 if (positionChange >= pixelDeltaDistance) {
-                    return frameCount + (positionChange / pixelDeltaDistance) - 1;
+                    return frameCount + 1 - (positionChange / pixelDeltaDistance);
                 }
-
-                frameCount++;
-
-                if (frameCount > LIMIT) {
+                else if (frameCount > LIMIT) {
                     return float.MaxValue;
                 }
             }
@@ -339,15 +343,13 @@ namespace Pathfinder.Projections {
             const int LIMIT = 60 * 60;
 
             while (true) {
+                frameCount++;
                 positionChange += velocity;
 
                 if (positionChange >= pixelDeltaDistance) {
-                    return frameCount + (positionChange / pixelDeltaDistance) - 1;
+                    return frameCount + 1 - (positionChange / pixelDeltaDistance);
                 }
-
-                frameCount++;
-
-                if (frameCount > LIMIT) {
+                else if (frameCount > LIMIT) {
                     return float.MaxValue;
                 }
             }
