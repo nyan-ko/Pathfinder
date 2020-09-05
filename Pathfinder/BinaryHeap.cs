@@ -73,14 +73,12 @@ namespace Pathfinder {
             return result;
         }
 
-        public void Update(T node) => MaintainHeapStructure(node);
-
         private void UpdateNode(T node, int newIndex) {
             nodes[newIndex] = node;
             node.HeapIndex = (short)newIndex;
         }
 
-        private void MaintainHeapStructure(T node) {
+        public void MaintainHeapStructure(T node) {
             int index = node.HeapIndex;
             int parentIndex = FindParentIndex(index);
             T parentNode = nodes[parentIndex];

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Pathfinder.Moves {
     public struct ActionCost {
-        public float TotalCost;
+        public float TotalCost;  // i question if only TotalCost is necessary
         public float TurnAroundCost;
         public float MovementTowardsGoalCost;
 

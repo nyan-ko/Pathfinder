@@ -9,20 +9,13 @@ using ReLogic;
 using Pathfinder;
 using Pathfinder.Projections;
 using Pathfinder.Moves;
-using Pathfinder.Heuristics;
 using Pathfinder.Input;
 using Pathfinder.Structs;
 using Microsoft.Xna.Framework;
 using Terraria.GameContent;
 
-namespace Nodes
-{
-
-    public enum NodeStatus : byte {
-        Open,
-        Closed
-    }
-
+namespace Nodes 
+{ 
     public interface INode {
         int X { get; }
         int Y { get; }
@@ -65,26 +58,25 @@ namespace Nodes
         }
     }
 
-    public class JumpNode : AbstractPathNode {
+    public class VelocityNode : AbstractPathNode {
         public PlayerProjection Projection;
         public PixelPosition ParentVelocity;
         public int Input;
-        private JumpNodeCollection _collection;
+        private VelocityNodeCollection _collection;
 
-        public JumpNode(int x, int y, int goalX, int goalY, PlayerProjection projection, int input) : base(x, y, goalX, goalY) {
+        public VelocityNode(int x, int y, int goalX, int goalY, PlayerProjection projection, int input) : base(x, y, goalX, goalY) {
             Projection = projection;
             Input = input;
-
             HeuristicCostToGoal = CalculateHeuristic(goalX, goalY);
         }
 
-        public void LinkToCollection(JumpNodeCollection collection) {
+        public void LinkToCollection(VelocityNodeCollection collection) {
             _collection = collection;
             collection.AddNode(this);
         }
 
         protected override void SetAdditionalParentFields(INode parent) {
-            ParentVelocity = ((JumpNode)parent).Projection.velocity;
+            ParentVelocity = ((VelocityNode)parent).Projection.velocity;
         }
 
         private float CalculateHeuristic(int x, int y) {
@@ -108,22 +100,21 @@ namespace Nodes
         }
     }
 
-    public class JumpNodeCollection {
-        public Dictionary<PixelPosition, JumpNode> Nodes;  // TODO private these and a bunch of other unnecessarily public fields
-        public byte ParentJumpNodeIndex;
-        public byte JumpNodeIndex;
+    public class VelocityNodeCollection {
+        public Dictionary<PixelPosition, VelocityNode> Nodes;  // TODO private these and a bunch of other unnecessarily public fields
 
-        public int X;
-        public int Y;
+        public int X, Y;  // only used for debug
 
-        public JumpNodeCollection(int x, int y) {
-            Nodes = new Dictionary<PixelPosition, JumpNode>(8);  // arbitrary initial capacity, yet to find out if this is a good initial capacity
+        public VelocityNodeCollection(int x, int y) {
+            // since resizing a dictionary takes a relatively long amount of time, setting an (albeit small) initial capacity
+            // gets rid of the need to resize multiple times for the first few additions to the dictionary
+            Nodes = new Dictionary<PixelPosition, VelocityNode>(8); 
 
             X = x;
             Y = y;
         }
 
-        public void AddNode(JumpNode node) {
+        public void AddNode(VelocityNode node) {
             Nodes.Add(node.Projection.velocity, node);
         }
 
@@ -141,7 +132,7 @@ namespace Nodes
             return false;
         }
 
-        public JumpNode this[PixelPosition velocity] {
+        public VelocityNode this[PixelPosition velocity] {
             get {
                 if (Nodes.ContainsKey(velocity)) {
                     return Nodes[velocity];
@@ -155,27 +146,26 @@ namespace Nodes
 
     public class AStarPathfinder : IPathFinder {
         private const float MINIMUM_IMPROVEMENT = 0.1F;
-        public static readonly IHeuristic Heuristic = new Manhattan();
 
         public int ExploreLimit { get; set; } = 500;
 
-        private int[] HeuristicWeights;
+        //private int[] HeuristicWeights;
         private BaseMovement[] availableMoves;
-        private BinaryNodeHeap<JumpNode> openSet;
-        private Dictionary<long, JumpNodeCollection> nodeHashDictionary;
-        private JumpNode startNode;
-        private JumpNode endNode;
+        private BinaryNodeHeap<VelocityNode> openSet;
+        private Dictionary<long, VelocityNodeCollection> nodeHashDictionary;
+        private VelocityNode startNode;
+        private VelocityNode endNode;
 
         public AStarPathfinder(int startX, int startY, int endX, int endY, Player startingProjection) {
-            startNode = new JumpNode(startX, startY, endX, endY, new PlayerProjection(startingProjection), byte.MaxValue) { CostFromStart = 0 };
-            endNode = new JumpNode(endX, endY, endX, endY, PlayerProjection.Empty, byte.MaxValue) { CostFromStart = -1 };
+            startNode = new VelocityNode(startX, startY, endX, endY, new PlayerProjection(startingProjection), byte.MaxValue) { CostFromStart = 0 };
+            endNode = new VelocityNode(endX, endY, endX, endY, PlayerProjection.Empty, byte.MaxValue) { CostFromStart = -1 };
             availableMoves = BaseMovement.GetAllMoves();
-            HeuristicWeights = new int[] { 1, 2, 3, 5, 10 };
-            nodeHashDictionary = new Dictionary<long, JumpNodeCollection>();
-            openSet = new BinaryNodeHeap<JumpNode>();
+            //HeuristicWeights = new int[] { 1, 2, 3, 5, 10 };
+            nodeHashDictionary = new Dictionary<long, VelocityNodeCollection>();
+            openSet = new BinaryNodeHeap<VelocityNode>();
         }
 
-        public IEnumerable<JumpNodeCollection> debug2 { get 
+        public IEnumerable<VelocityNodeCollection> debug2 { get 
                 {
                 lock (nodeHashDictionary) {
                     return nodeHashDictionary?.Values;
@@ -191,10 +181,10 @@ namespace Nodes
             bool foundPath = false;
             int count = 0;
             openSet.Add(startNode);
-            var startCollection = new JumpNodeCollection(startNode.X, startNode.Y);
+            var startCollection = new VelocityNodeCollection(startNode.X, startNode.Y);
             startNode.LinkToCollection(startCollection);
             nodeHashDictionary.Add(PathfindingUtils.GetNodeHash(startNode.X, startNode.Y), startCollection);
-            JumpNode currentNode = startNode;
+            VelocityNode currentNode = startNode;
 
             while (!foundPath) {
                 currentNode = openSet.TakeLowest();
@@ -232,21 +222,21 @@ namespace Nodes
             return null; // idk what to do yet for this
         }
 
-        private List<JumpNode> RetraceSteps(JumpNode lastNode) {
-            List<JumpNode> steps = new List<JumpNode>();                        // TODO make this less weirdChamp
+        private List<VelocityNode> RetraceSteps(VelocityNode lastNode) {
+            List<VelocityNode> steps = new List<VelocityNode>();                        // TODO make this less weirdChamp
             long hash = PathfindingUtils.GetNodeHash(lastNode.X, lastNode.Y);  // gets the node that exists in the node dictionary since certain instances may not have a set parent (i.e. endNode and startNode)
-            var currentNode = GetNode(hash, lastNode.Projection.velocity);
+            var currentNode = DefinitiveGetNode(hash, lastNode.Projection.velocity);
 
             while (currentNode.X != startNode.X || currentNode.Y != startNode.Y) {
                 steps.Add(currentNode);
                 hash = PathfindingUtils.GetNodeHash(currentNode.ParentX, currentNode.ParentY);
-                currentNode = GetNode(hash, currentNode.ParentVelocity);
+                currentNode = DefinitiveGetNode(hash, currentNode.ParentVelocity);
             }
 
             return steps;
         }
 
-        private void SearchNeighbours(JumpNode parent) {
+        private void SearchNeighbours(VelocityNode parent) {
             byte input = 1;
 
             foreach (BaseMovement movement in availableMoves) {
@@ -269,7 +259,7 @@ namespace Nodes
                             openSet.Add(neighbouringNode);
                         }
                         else {
-                            openSet.Update(neighbouringNode);
+                            openSet.MaintainHeapStructure(neighbouringNode);
                         }
                     }
                 }
@@ -278,22 +268,22 @@ namespace Nodes
             }
         }
 
-        private JumpNode GetNode(long hash, PixelPosition velocity) {
+        private VelocityNode DefinitiveGetNode(long hash, PixelPosition velocity) {
             return nodeHashDictionary[hash][velocity];
         }
 
-        private JumpNode GetNode(int x, int y, long hash, PlayerProjection z, int input) {
+        private VelocityNode GetNode(int x, int y, long hash, PlayerProjection z, int input) {
             if (nodeHashDictionary.ContainsKey(hash)) {
                 var collection = nodeHashDictionary[hash];
                 if (collection.ContainsProjection(z))
                     return collection[z.velocity];
-                JumpNode node = new JumpNode(x, y, endNode.X, endNode.Y, z, input);
+                VelocityNode node = new VelocityNode(x, y, endNode.X, endNode.Y, z, input);
                 node.LinkToCollection(collection);
                 return node;
             }
             else {
-                JumpNodeCollection nodeCollection = new JumpNodeCollection(x, y);
-                JumpNode node = new JumpNode(x, y, endNode.X, endNode.Y, z, input);
+                VelocityNodeCollection nodeCollection = new VelocityNodeCollection(x, y);
+                VelocityNode node = new VelocityNode(x, y, endNode.X, endNode.Y, z, input);
                 node.LinkToCollection(nodeCollection);
                 nodeHashDictionary.Add(hash, nodeCollection);
                 return node;

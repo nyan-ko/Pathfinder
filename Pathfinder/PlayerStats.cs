@@ -7,7 +7,6 @@ using Terraria;
 
 namespace Pathfinder {
     public class PlayerStats {
-
         public float jumpSpeed;
         public float maxFallSpeed;
         public float gravity;

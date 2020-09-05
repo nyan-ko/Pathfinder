@@ -8,6 +8,8 @@ using Microsoft.Xna.Framework;
 
 namespace Pathfinder {
     public static class PathfindingUtils {
+        // guaranteed no collisions, tested by iterating through all possible tile coordinates
+        // numbers used can probably be smaller though
         public static long GetNodeHash(int x, int y) {
             long hash = 50113401;
             hash = 89577541 * hash + x;
@@ -29,6 +31,11 @@ namespace Pathfinder {
             return xSign >= 0 && ySign >= 0;
         }
 
+        public static bool IsTileSolid(int x, int y) {
+            Tile tile = Main.tile[x, y];
+            return tile != null && Main.tileSolid[tile.type] && tile.active() && !tile.inActive();
+        }
+
         //// probably won't use reckless absolutes
         // fast cood fast cood
         public static int RecklessAbsolute(int value) {
@@ -37,11 +44,6 @@ namespace Pathfinder {
         
         public static float RecklessAbsolute(float value) {
             return value > 0 ? value : -value;  // gets rid of 2 if checks woo so fast
-        }
-
-        public static bool IsTileSolid(int x, int y) {
-            Tile tile = Main.tile[x, y];
-            return tile != null && Main.tileSolid[tile.type] && tile.active() && !tile.inActive();
         }
     }
 }
