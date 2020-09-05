@@ -48,16 +48,17 @@ namespace Nodes
             _x = x;
             _y = y;
             ActionCost = ActionCost.ImpossibleCost;
-
             CostFromStart = -1;
-            //HeuristicCostToGoal = CalculateHeuristicCostToGoal(goalX, goalY);
             HeapIndex = -1;
         }
 
         public void SetParent(INode parent) {
             pX = parent.X;
             pY = parent.Y;
+            SetAdditionalParentFields(parent);
         }
+
+        protected abstract void SetAdditionalParentFields(INode parent);
 
         public override string ToString() {
             return $"X:{_x} Y:{_y} Cost:{Cost}";
@@ -82,6 +83,10 @@ namespace Nodes
             collection.AddNode(this);
         }
 
+        protected override void SetAdditionalParentFields(INode parent) {
+            ParentVelocity = ((JumpNode)parent).Projection.velocity;
+        }
+
         private float CalculateHeuristic(int x, int y) {
             float horizontalCost = Projection.EstimateTimeToWalkDistance((x - X) * 16);
             float verticalCost = 0;
@@ -93,8 +98,10 @@ namespace Nodes
                 verticalCost = Projection.EstimateTimeToJumpDistance((y - Y) * 16);
             }
 
-            // ordered by best to worst heuristic
-            return Math.Max(horizontalCost, verticalCost) * 1.41421F;  // magic fucking number, this somehow results in drastically less nodes explored and a much more accurate heuristic compared to the one below
+            // best to worser heuristics
+            const float MAGIC_HEURISTIC_MULTIPLIER = 1.41421F;  // pure magic, this somehow results in drastically less nodes explored and an overall much more accurate heuristic compared to functions without it
+            return (float)Math.Sqrt(horizontalCost * horizontalCost + verticalCost * verticalCost) * MAGIC_HEURISTIC_MULTIPLIER;
+            //return Math.Max(horizontalCost, verticalCost) * MAGIC_HEURISTIC_MULTIPLIER;  
             //return Math.Max(horizontalCost, verticalCost);
             //return horizontalCost + verticalCost;
             //return (float)Math.Sqrt(horizontalCost * horizontalCost + verticalCost * verticalCost);
@@ -189,28 +196,22 @@ namespace Nodes
             nodeHashDictionary.Add(PathfindingUtils.GetNodeHash(startNode.X, startNode.Y), startCollection);
             JumpNode currentNode = startNode;
 
-            //try {
-                while (!foundPath) {
-                    currentNode = openSet.TakeLowest();
+            while (!foundPath) {
+                currentNode = openSet.TakeLowest();
 
-                    bool reachedEnd = currentNode.Projection.IsBodyIntersectingWithTile(endNode.X, endNode.Y);
-                    if (reachedEnd) {
-                        foundPath = true;
-                        break;
-                    }
-
-                    SearchNeighbours(currentNode);
-                    count++;
-                    //Thread.Sleep(10);
-
-                    if (count >= ExploreLimit) {
-                        break;
-                    }
+                bool reachedEnd = currentNode.Projection.IsBodyIntersectingWithTile(endNode.X, endNode.Y);
+                if (reachedEnd) {
+                    foundPath = true;
+                    break;
                 }
-            //}
-            //catch {
-            //    //return null;
-            //}
+
+                SearchNeighbours(currentNode);
+                count++;
+
+                if (count >= ExploreLimit) {
+                    break;
+                }
+            }
 
             if (foundPath) {
                 PathfinderTriggersSet triggersSet = new PathfinderTriggersSet();
@@ -219,7 +220,7 @@ namespace Nodes
                 var retracedSteps = RetraceSteps(currentNode);
                 foreach (var step in retracedSteps) {
                     if (step.Input < 256 && step.Input > 0) {
-                        triggersSet.AddTrigger(new Trigger((byte)step.Input, step.ActionCost.TotalCost, step.CostFromStart - step.ActionCost.TotalCost));
+                        triggersSet.AddTrigger((byte)step.Input, step.ActionCost.TotalCost, step.CostFromStart - step.ActionCost.TotalCost);
                     }
                 }
 
@@ -232,8 +233,6 @@ namespace Nodes
         }
 
         private List<JumpNode> RetraceSteps(JumpNode lastNode) {
-            if (lastNode.X == startNode.X && lastNode.Y == startNode.Y) { return new List<JumpNode>(); }
-
             List<JumpNode> steps = new List<JumpNode>();                        // TODO make this less weirdChamp
             long hash = PathfindingUtils.GetNodeHash(lastNode.X, lastNode.Y);  // gets the node that exists in the node dictionary since certain instances may not have a set parent (i.e. endNode and startNode)
             var currentNode = GetNode(hash, lastNode.Projection.velocity);
@@ -248,7 +247,6 @@ namespace Nodes
         }
 
         private void SearchNeighbours(JumpNode parent) {
-            //for (byte i = 0; i < parent.Nodes.Count; i++) {
             byte input = 1;
 
             foreach (BaseMovement movement in availableMoves) {
@@ -260,12 +258,6 @@ namespace Nodes
                 if (nodeCost.TotalCost != float.MaxValue) {
                     long hash = PathfindingUtils.GetNodeHash(currentX, currentY);
                     var neighbouringNode = GetNode(currentX, currentY, hash, movementProjection, input);
-
-                    //if (!neighbouringNode.ContainsVelocity(movementProjection.velocity)) {
-                    //    neighbouringNode.AddNode(new JumpNode(movementProjection, input));
-                    //    neighbouringNode.JumpNodeIndex++;
-                    //}
-
                     float costToGetHere = parent.CostFromStart + nodeCost.TotalCost;
                     float newNeighbourCost = costToGetHere + neighbouringNode.HeuristicCostToGoal;
 
@@ -273,8 +265,6 @@ namespace Nodes
                         neighbouringNode.ActionCost = nodeCost;
                         neighbouringNode.CostFromStart = costToGetHere;
                         neighbouringNode.SetParent(parent);
-                        neighbouringNode.ParentVelocity = parent.Projection.velocity;
-                        //neighbouringNode.ParentJumpNodeIndex = parent.JumpNodeIndex;
                         if (neighbouringNode.HeapIndex == -1) {
                             openSet.Add(neighbouringNode);
                         }
@@ -286,7 +276,6 @@ namespace Nodes
 
                 input++;
             }
-            //}
         }
 
         private JumpNode GetNode(long hash, PixelPosition velocity) {
