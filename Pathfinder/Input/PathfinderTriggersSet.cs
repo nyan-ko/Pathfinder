@@ -66,10 +66,9 @@ namespace Pathfinder.Input {
             if (activeInputs.Count != 0) {
                 for (int k = 0; k < activeInputs.Count; k++) {
                     Trigger trigger = activeInputs[k];
-                    var inputs = trigger.Input.Split(Trigger.INPUT_SEPARATOR);
 
-                    for (int m = 0; m < inputs.Length; m++) {
-                        string actualInput = inputs[m];
+                    for (int m = 0; m < trigger.Input.Length; m++) {
+                        string actualInput = trigger.Input[m];
                         KeyStatus[actualInput] = true;
                         oldInputs.Add(actualInput);
                     }

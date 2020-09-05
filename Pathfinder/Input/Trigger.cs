@@ -6,20 +6,18 @@ using System.Threading.Tasks;
 
 namespace Pathfinder.Input {
     public struct Trigger {
-        public const char INPUT_SEPARATOR = '|'; 
+        public readonly string[] Input;
+        public readonly float Duration;
+        public readonly float DelayFromStart;
 
-        public string Input;
-        public float Duration;
-        public float DelayFromStart;
-
-        public Trigger(string input, float duration, float delay) {
+        public Trigger(string[] input, float duration, float delay) {
             Input = input;
             Duration = duration;
             DelayFromStart = delay;
         }
 
         public Trigger(byte input, float duration, float delay) {
-            if (!StringInputsByNodeInputs.TryGetValue(input, out string strInput) && input != 0) {
+            if (!StringInputsByNodeInputs.TryGetValue(input, out string[] strInput) && input != 0) {
                 throw new InvalidOperationException();
             }
 
@@ -28,16 +26,15 @@ namespace Pathfinder.Input {
             DelayFromStart = delay;
         }
 
-        public static Dictionary<byte, string> StringInputsByNodeInputs = new Dictionary<byte, string> {
-            { 1, "Jump" },
-            { 2, "Jump|Right" },
-            { 3, "Right" },
-            { 4, "Down|Right" },
-            { 5, "Down" },
-            { 6, "Down|Left" },
-            { 7, "Left" },
-            { 8, "Jump|Left" },
-            { 9, "" }
+        public static Dictionary<byte, string[]> StringInputsByNodeInputs = new Dictionary<byte, string[]> {
+            { 1, new string[] { "Jump" } },
+            { 2, new string[] { "Jump", "Right" } },
+            { 3, new string[] { "Right" } },
+            { 4, new string[] { "Down", "Right" } },
+            { 5, new string[] { "Down" } },
+            { 6, new string[] { "Down", "Left" } },
+            { 7, new string[] { "Left" } },
+            { 8, new string[] { "Jump", "Left" } }
         };
     }
 }
