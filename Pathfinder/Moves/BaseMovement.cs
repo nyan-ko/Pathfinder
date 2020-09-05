@@ -36,7 +36,7 @@ namespace Pathfinder.Moves {
             if (playerGoingWrongWay)
                 turnFrames = SimulateProjectionCostToTurnAround(ref player);
             else if (standingStill && RelativeNodeDirection != HorizontalDirection.None)
-                player.SetDirection(RelativeNodeDirection);
+                player.SetInitialDirection(RelativeNodeDirection);
             
             int frames = SimulateProjectionCostToGoal(ref player, goalLocation);
 
@@ -45,7 +45,7 @@ namespace Pathfinder.Moves {
 
         private int SimulateProjectionCostToTurnAround(ref PlayerProjection player) {
             int frames = 0;
-            player.SetDirection(-player.Direction);
+            player.InvertDirection();
 
             while (!player.IsGoingRightWay) {
                 if (player.ShouldUseMidairTurn)

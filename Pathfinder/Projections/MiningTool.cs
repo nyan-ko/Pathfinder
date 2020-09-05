@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Pathfinder.Projections {
-    public struct PickaxeProjection {
+    public struct MiningTool {
         public byte MiningSpeed;
         public byte PickaxePower;
 
-        public PickaxeProjection(byte speed, byte power) {
+        public MiningTool(byte speed, byte power) {
             MiningSpeed = speed;
             PickaxePower = power;
         }

@@ -21,16 +21,11 @@ namespace Pathfinder.Projections {
 
         public int jump;
         private bool canJump;
-        public float gravity;
-        public float maxRunSpeed;
-        public float runAcceleration;
-        public float runSlowdown;
-        public float accessoryRunSpeed;
 
-        public sbyte Direction;
+        private sbyte Direction;
         public CollisionType CollisionType;
 
-        public PickaxeProjection[] pickaxes;
+        private MiningTool[] pickaxes;
         private PlayerStats _stats;
 
         public PlayerProjection(Player player) {
@@ -41,21 +36,16 @@ namespace Pathfinder.Projections {
 
             jump = 15;
             canJump = false;
-            gravity = Player.defaultGravity;
             Direction = 1;
-            maxRunSpeed = player.maxRunSpeed;
-            runAcceleration = player.runAcceleration;
-            runSlowdown = player.runSlowdown;
-            accessoryRunSpeed = player.accRunSpeed;
 
             _stats = new PlayerStats(player);
             CollisionType = 0;
-            pickaxes = new PickaxeProjection[1];
             ScanInventory();
+            pickaxes = new MiningTool[1];
         }
 
         private void ScanInventory() { // TODO
-            
+
         }
 
         // currently unused
@@ -77,9 +67,9 @@ namespace Pathfinder.Projections {
 
         public bool IsGoingRightWay => velocity.X * Direction >= 0;
 
-        public void SetDirection(HorizontalDirection direction) => Direction = (sbyte)direction;
+        public void InvertDirection() => Direction = (sbyte)-Direction;
 
-        public void SetDirection(int direction) => Direction = (sbyte)direction;
+        public void SetInitialDirection(HorizontalDirection direction) => Direction = (sbyte)direction;
 
         #region Updates
 
@@ -208,25 +198,25 @@ namespace Pathfinder.Projections {
         #region Increments
         private void IncrementHorizontalMovement() {
             if (Direction >= 0) {
-                if (velocity.X < maxRunSpeed) {
-                    velocity.X += runAcceleration;
+                if (velocity.X < _stats.maxRunSpeed) {
+                    velocity.X += _stats.runAcceleration;
                 }
-                else if (velocity.X < accessoryRunSpeed && velocity.Y == 0) {
-                    velocity.X += runAcceleration * 0.2F;
+                else if (velocity.X < _stats.accessoryRunSpeed && velocity.Y == 0) {
+                    velocity.X += _stats.runAcceleration * 0.2F;
                 }
-                else if (velocity.Y == 0 && velocity.X > runSlowdown) {
-                    velocity.X -= runSlowdown;
+                else if (velocity.Y == 0 && velocity.X > _stats.runSlowdown) {
+                    velocity.X -= _stats.runSlowdown;
                 }
             }
             else {
-                if (velocity.X > -maxRunSpeed) {
-                    velocity.X -= runAcceleration;
+                if (velocity.X > -_stats.maxRunSpeed) {
+                    velocity.X -= _stats.runAcceleration;
                 }
-                else if (velocity.X > -accessoryRunSpeed && velocity.Y == 0) {
-                    velocity.X -= runAcceleration * 0.2F;
+                else if (velocity.X > -_stats.accessoryRunSpeed && velocity.Y == 0) {
+                    velocity.X -= _stats.runAcceleration * 0.2F;
                 }
-                else if (velocity.Y == 0 && velocity.X < -runSlowdown) {
-                    velocity.X += runSlowdown;
+                else if (velocity.Y == 0 && velocity.X < -_stats.runSlowdown) {
+                    velocity.X += _stats.runSlowdown;
                 }
             }
         }
@@ -242,7 +232,7 @@ namespace Pathfinder.Projections {
 
         private void IncrementFallMovement() {
             if (velocity.Y < _stats.maxFallSpeed) {
-                velocity.Y += gravity;
+                velocity.Y += _stats.gravity;
             }
             else if (velocity.Y > _stats.maxFallSpeed) {
                 velocity.Y = _stats.maxFallSpeed;
@@ -253,12 +243,12 @@ namespace Pathfinder.Projections {
         private void IncrementTurnAroundMovement() {
             if (Direction <= 0) {
                 if (velocity.X > 0) {
-                    velocity.X -= runSlowdown + runAcceleration;
+                    velocity.X -= _stats.runSlowdown + _stats.runAcceleration;
                 }
             }
             else {
                 if (velocity.X < 0) {
-                    velocity.X += runSlowdown + runAcceleration;
+                    velocity.X += _stats.runSlowdown + _stats.runAcceleration;
                 }
             }
         }
@@ -287,8 +277,8 @@ namespace Pathfinder.Projections {
             while (true) {
                 frameCount++;
 
-                if (velocity < maxRunSpeed) {
-                    velocity += runAcceleration;
+                if (velocity < _stats.maxRunSpeed) {
+                    velocity += _stats.runAcceleration;
                 }
 
                 positionChange += velocity;
@@ -317,7 +307,7 @@ namespace Pathfinder.Projections {
                 frameCount++;
 
                 if (velocity < _stats.maxFallSpeed) {
-                    velocity += gravity;
+                    velocity += _stats.gravity;
                 }
 
                 positionChange += velocity;
