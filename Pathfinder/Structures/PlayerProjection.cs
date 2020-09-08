@@ -1,16 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.DataStructures;
-using Pathfinder.Moves;
-using Pathfinder.Structs;
-using Nodes;
+using Pathfinder.Movements;
 
-namespace Pathfinder.Projections {
+namespace Pathfinder.Structures {
     public struct PlayerProjection {  // trace on
         public static readonly PlayerProjection Empty = new PlayerProjection();
 
@@ -25,7 +17,6 @@ namespace Pathfinder.Projections {
         private sbyte Direction;
         public CollisionType CollisionType;
 
-        private MiningTool[] pickaxes;
         private PlayerStats _stats;
 
         public PlayerProjection(Player player) {
@@ -38,7 +29,6 @@ namespace Pathfinder.Projections {
             Direction = 1;
             _stats = new PlayerStats(player);
             CollisionType = 0;
-            pickaxes = new MiningTool[1];
         }
 
         // currently unused
@@ -341,16 +331,6 @@ namespace Pathfinder.Projections {
 
         public bool IsBodyIntersectingWithTile(int tileX, int tileY) {
             return PathfindingUtils.IsEntityIntersectingWithEntity(position.X, position.Y, width, height, tileX * 16, tileY * 16, 16, 16);
-        }
-
-        public bool WillTileOriginIntersectWithTile(float tilePixelX, float tilePixelY) {
-            float projectedX = position.X + velocity.X;
-            float projectedY = position.Y + velocity.Y;
-            return PathfindingUtils.IsEntityIntersectingWithEntity(projectedX, projectedY, 16, 16, tilePixelX, tilePixelY, 16, 16);
-        }
-
-        public bool IsTileOriginIntersectingWithTile(float tilePixelX, float tilePixelY) {
-            return PathfindingUtils.IsEntityIntersectingWithEntity(position.X, position.Y, 16, 16, tilePixelX, tilePixelY, 16, 16);
         }
 
         public bool IsOriginIntersectingWithTile(float tilePixelX, float tilePixelY) {
